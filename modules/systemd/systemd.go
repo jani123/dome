@@ -13,16 +13,20 @@ import (
 )
 
 type (
+	// Runner isolates systemctl execution for tests.
 	Runner interface {
 		Run(context.Context, string, ...string) ([]byte, error)
 	}
+	// OSRunner executes commands on the target host.
 	OSRunner struct{}
 )
 
+// Run executes a host command with context cancellation.
 func (OSRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
 	return exec.CommandContext(ctx, name, args...).Output()
 }
 
+// Service declares enabled and running state of a loaded .service unit.
 type Service struct {
 	Name    string
 	Enabled bool
@@ -32,7 +36,10 @@ type Service struct {
 
 var serviceName = regexp.MustCompile(`^[a-zA-Z0-9_][a-zA-Z0-9_.@:-]*\.service$`)
 
+// ID uses the service unit name as its stable identity.
 func (s *Service) ID() resource.ID { return resource.ID{Module: "systemd", Name: s.Name} }
+
+// Validate restricts management to valid .service unit names.
 func (s *Service) Validate() (err error) {
 	defer func() { err = fault.Wrap(fault.Validation, err, "module", "systemd", "resource_id", s.ID().String()) }()
 	if !serviceName.MatchString(s.Name) {
@@ -52,7 +59,10 @@ func snapshot(enabled, running bool) resource.Snapshot {
 	return resource.Snapshot{Exists: true, Value: fmt.Sprintf("enabled=%t;running=%t", enabled, running)}
 }
 
+// Desired describes enabled and running state without secret data.
 func (s *Service) Desired() resource.Snapshot { return snapshot(s.Enabled, s.Running) }
+
+// Observe inspects loaded service state and rejects unsupported unit states.
 func (s *Service) Observe(ctx context.Context) (_ resource.Snapshot, err error) {
 	defer func() { err = fault.Wrap(fault.Observation, err, "module", "systemd", "resource_id", s.ID().String()) }()
 	if err = s.Validate(); err != nil {
@@ -83,6 +93,7 @@ func (s *Service) Observe(ctx context.Context) (_ resource.Snapshot, err error) 
 	return snapshot(enabled == "enabled", active == "active"), nil
 }
 
+// Apply reconciles service state; deletion stops and disables without uninstalling.
 func (s *Service) Apply(ctx context.Context, action resource.Action) (err error) {
 	defer func() { err = fault.Wrap(fault.Apply, err, "module", "systemd", "resource_id", s.ID().String()) }()
 	if err = s.Validate(); err != nil {
@@ -122,7 +133,10 @@ func (s *Service) Apply(ctx context.Context, action resource.Action) (err error)
 // A pruned service is stopped and disabled, never uninstalled.
 type Module struct{ Runner Runner }
 
+// Name identifies the explicitly registered systemd module.
 func (Module) Name() string { return "systemd" }
+
+// Restore validates an owned service identity and constructs a stop/disable handle.
 func (m Module) Restore(id resource.ID) (resource.Resource, error) {
 	if id.Module != "systemd" {
 		return nil, fmt.Errorf("wrong module")

@@ -17,6 +17,7 @@ import (
 )
 
 type (
+	// Options overrides configured state and sources for a single invocation.
 	Options struct {
 		StatePath   string
 		LocalPath   string
@@ -24,6 +25,7 @@ type (
 		Git         config.GitOptions
 		JSON        bool
 	}
+	// Backend is the injectable runtime contract used by the consumer CLI.
 	Backend interface {
 		Plan(context.Context, Options) (*reconcile.Plan, error)
 		Apply(context.Context, Options) (*reconcile.Plan, error)
@@ -46,7 +48,9 @@ type clock interface {
 	Sleep(context.Context, time.Duration) error
 }
 
+// New constructs commands for an injectable backend without running them.
 func New(b Backend) *cobra.Command { return newWithClock(b, dag.RealClock{}) }
+
 func newWithClock(b Backend, clock clock) *cobra.Command {
 	var o Options
 	root := &cobra.Command{Use: "agent", Short: "Reconcile infrastructure and execute durable playbooks", SilenceErrors: true, SilenceUsage: true, Args: groupArgs, RunE: groupHelp}

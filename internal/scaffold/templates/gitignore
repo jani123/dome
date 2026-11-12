@@ -1,0 +1,7 @@
+/agent
+/.dome/
+/sandbox/*
+!/sandbox/.gitkeep
+.env
+*.key
+secrets.yaml

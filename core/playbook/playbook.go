@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Status describes observation results used to decide safe execution or recovery.
 type Status string
 
 const (
@@ -20,7 +21,9 @@ const (
 )
 
 type (
-	Ref         string
+	// Ref names a registered playbook.
+	Ref string
+	// RetryPolicy bounds attempts per invocation and delays between retries.
 	RetryPolicy struct {
 		Attempts int
 		Delay    time.Duration
@@ -43,16 +46,19 @@ type (
 	}
 )
 
+// Playbook is a versioned explicit DAG; bump Version when callback behavior changes.
 type Playbook struct {
 	Name    string
 	Version string
 	Steps   []*Step
 }
 
+// New constructs a workflow at version 1; validate it before execution.
 func New(name string, steps ...*Step) *Playbook {
 	return &Playbook{Name: name, Version: "1", Steps: steps}
 }
 
+// Validate checks graph structure, callback requirements, and safe recovery contracts.
 func (p *Playbook) Validate() error {
 	if p == nil || p.Name == "" {
 		return fmt.Errorf("playbook name is required")

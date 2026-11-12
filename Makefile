@@ -1,8 +1,18 @@
-.PHONY: build test test-race test-e2e test-integration fmt check
+.PHONY: build build-initializer docs test test-race test-e2e test-integration fmt check
+
+VERSION ?= dev
 
 build:
 	mkdir -p .build
 	CGO_ENABLED=0 go build -trimpath -o .build/agent ./examples/basic-agent
+
+build-initializer:
+	mkdir -p .build
+	CGO_ENABLED=0 go build -trimpath -ldflags "-X main.version=$(VERSION)" -o .build/dome ./cmd/dome
+
+docs:
+	scripts/install-hugo.sh
+	scripts/build-docs.sh next
 
 test:
 	go test ./...
@@ -17,9 +27,9 @@ test-integration:
 	go test -tags=integration ./... -count=1 -timeout=10m
 
 fmt:
-	gofumpt -w agent cli config core modules examples internal tests
+	gofumpt -w agent cli cmd config core modules examples internal tests scripts
 
 check:
-	test -z "$$(gofumpt -l agent cli config core modules examples internal tests)"
+	test -z "$$(gofumpt -l agent cli cmd config core modules examples internal tests scripts)"
 	go vet ./...
 	go test ./...

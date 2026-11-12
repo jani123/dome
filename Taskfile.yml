@@ -39,6 +39,16 @@ tasks:
     cmds:
       - CGO_ENABLED=0 go build -trimpath -o .build/agent ./examples/basic-agent {{.CLI_ARGS}}
 
+  build:initializer:
+    desc: Build the development initializer (init requires a tagged build)
+    cmds:
+      - make build-initializer
+
+  docs:
+    desc: Build and check the pinned Hugo development guides
+    cmds:
+      - make docs
+
   test:
     desc: Run Go tests
     deps: [module]
@@ -49,13 +59,13 @@ tasks:
     desc: Format Go sources
     deps: [module]
     cmds:
-      - gofumpt -w agent cli config core modules examples internal tests
+      - gofumpt -w agent cli cmd config core modules examples internal tests scripts
 
   check:
     desc: Check Go formatting, vet packages and run tests
     deps: [module]
     cmds:
-      - test -z "$(gofumpt -l agent cli config core modules examples internal tests)"
+      - test -z "$(gofumpt -l agent cli cmd config core modules examples internal tests scripts)"
       - go vet ./...
       - task: test
 

@@ -8,6 +8,7 @@ import (
 	"github.com/samber/oops"
 )
 
+// Code is a stable public failure category.
 type Code string
 
 const (
@@ -32,10 +33,12 @@ func Wrap(code Code, err error, context ...any) error {
 	return oops.Code(string(code)).With(context...).Wrap(err)
 }
 
+// New creates a categorized error; attached context must contain no secrets.
 func New(code Code, message string, context ...any) error {
 	return Wrap(code, errors.New(message), context...)
 }
 
+// Category returns the preserved public error code or internal for uncategorized errors.
 func Category(err error) string {
 	var e oops.OopsError
 	if errors.As(err, &e) {

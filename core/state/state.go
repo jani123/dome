@@ -20,16 +20,19 @@ import (
 )
 
 type (
+	// Store owns SQLite connections; hold Guard throughout reconciliation or DAG execution.
 	Store struct {
 		db    *sql.DB
 		path  string
 		guard sync.Mutex
 	}
+	// Managed records ownership and last verified applied state, not observed host state.
 	Managed struct {
 		ID       resource.ID       `json:"id"`
 		Applied  resource.Snapshot `json:"applied"`
 		Revision string            `json:"revision"`
 	}
+	// Operation exposes non-secret resource or workflow execution diagnostics.
 	Operation struct {
 		ID       string    `json:"id"`
 		Resource string    `json:"resource"`
@@ -40,12 +43,14 @@ type (
 		Nodes    []Node    `json:"nodes,omitempty"`
 		Attempts []Attempt `json:"attempts,omitempty"`
 	}
+	// Execution identifies a workflow instance and its immutable graph fingerprint.
 	Execution struct {
 		ID          string `json:"id"`
 		Playbook    string `json:"playbook"`
 		Fingerprint string `json:"fingerprint"`
 		Status      string `json:"status"`
 	}
+	// Node is a workflow node checkpoint; attempts are durable before effects.
 	Node struct {
 		ID       string `json:"id"`
 		Status   string `json:"status"`
@@ -54,6 +59,7 @@ type (
 	}
 )
 
+// NewID creates a cryptographically random execution identifier; entropy failure panics.
 func NewID() string {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -62,6 +68,7 @@ func NewID() string {
 	return hex.EncodeToString(b[:])
 }
 
+// Open creates or migrates a pure-Go SQLite store. Call Guard before running operations.
 func Open(path string) (_ *Store, err error) {
 	defer func() { err = stateError(err) }()
 	if path == "" {
@@ -109,6 +116,7 @@ func Open(path string) (_ *Store, err error) {
 	return s, nil
 }
 
+// Close closes the SQLite connection pool.
 func (s *Store) Close() (err error) {
 	defer func() { err = stateError(err) }()
 	return s.db.Close()
@@ -190,6 +198,7 @@ func (s *Store) Guard(ctx context.Context) (_ func(), err error) {
 	return func() { _ = unix.Flock(int(f.Fd()), unix.LOCK_UN); _ = f.Close(); s.guard.Unlock() }, nil
 }
 
+// Managed returns owned identities and their last verified applied snapshots.
 func (s *Store) Managed(ctx context.Context) (_ []Managed, err error) {
 	defer func() { err = stateError(err) }()
 	rows, err := s.db.QueryContext(ctx, "SELECT module,name,exists_flag,value,revision FROM managed ORDER BY module,name")
@@ -208,18 +217,21 @@ func (s *Store) Managed(ctx context.Context) (_ []Managed, err error) {
 	return out, rows.Err()
 }
 
+// SaveManaged records ownership only after the caller has verified host state.
 func (s *Store) SaveManaged(ctx context.Context, v Managed) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, `INSERT INTO managed VALUES(?,?,?,?,?) ON CONFLICT(module,name) DO UPDATE SET exists_flag=excluded.exists_flag,value=excluded.value,revision=excluded.revision`, v.ID.Module, v.ID.Name, v.Applied.Exists, v.Applied.Value, v.Revision)
 	return err
 }
 
+// Forget removes ownership after successful deletion verification.
 func (s *Store) Forget(ctx context.Context, id resource.ID) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "DELETE FROM managed WHERE module=? AND name=?", id.Module, id.Name)
 	return err
 }
 
+// Revision returns the last successfully applied overall configuration revision.
 func (s *Store) Revision(ctx context.Context) (_ string, err error) {
 	defer func() { err = stateError(err) }()
 	var v string
@@ -230,12 +242,14 @@ func (s *Store) Revision(ctx context.Context) (_ string, err error) {
 	return v, err
 }
 
+// SetRevision records overall success only after all reconciliation work completes.
 func (s *Store) SetRevision(ctx context.Context, v string) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "INSERT INTO metadata VALUES('revision',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", v)
 	return err
 }
 
+// BeginOperation persists an attempt before external resource effects.
 func (s *Store) BeginOperation(ctx context.Context, r, action string) (_ string, err error) {
 	defer func() { err = stateError(err) }()
 	id := NewID()
@@ -243,12 +257,14 @@ func (s *Store) BeginOperation(ctx context.Context, r, action string) (_ string,
 	return id, err
 }
 
+// EndOperation records a resource attempt outcome using a non-secret error category.
 func (s *Store) EndOperation(ctx context.Context, id, status, code string) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "UPDATE operations SET status=?,error_code=? WHERE id=?", status, code, id)
 	return err
 }
 
+// Operations returns persisted resource and DAG execution diagnostics.
 func (s *Store) Operations(ctx context.Context) (_ []Operation, err error) {
 	defer func() { err = stateError(err) }()
 	rows, err := s.db.QueryContext(ctx, "SELECT id,resource,action,status,error_code,started FROM operations ORDER BY started,id")
@@ -267,12 +283,14 @@ func (s *Store) Operations(ctx context.Context) (_ []Operation, err error) {
 	return out, rows.Err()
 }
 
+// NewExecution persists a workflow identity and graph fingerprint before effects.
 func (s *Store) NewExecution(ctx context.Context, id, book, fp string) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "INSERT INTO executions VALUES(?,?,?,'running')", id, book, fp)
 	return err
 }
 
+// Execution retrieves a workflow instance by identifier.
 func (s *Store) Execution(ctx context.Context, id string) (_ Execution, err error) {
 	defer func() { err = stateError(err) }()
 	var v Execution
@@ -280,12 +298,14 @@ func (s *Store) Execution(ctx context.Context, id string) (_ Execution, err erro
 	return v, err
 }
 
+// FinishExecution records a workflow outcome without proving host state.
 func (s *Store) FinishExecution(ctx context.Context, id, status string) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "UPDATE executions SET status=? WHERE id=?", status, id)
 	return err
 }
 
+// Nodes returns the last checkpoint for each node in an execution.
 func (s *Store) Nodes(ctx context.Context, id string) (_ map[string]Node, err error) {
 	defer func() { err = stateError(err) }()
 	rows, err := s.db.QueryContext(ctx, "SELECT id,status,attempts,error_code FROM nodes WHERE execution_id=?", id)
@@ -304,6 +324,7 @@ func (s *Store) Nodes(ctx context.Context, id string) (_ map[string]Node, err er
 	return out, rows.Err()
 }
 
+// SaveNode checkpoints progress and records new attempts before effects.
 func (s *Store) SaveNode(ctx context.Context, execution string, v Node) (err error) {
 	defer func() { err = stateError(err) }()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -327,6 +348,7 @@ func (s *Store) SaveNode(ctx context.Context, execution string, v Node) (err err
 	return tx.Commit()
 }
 
+// Acquire atomically acquires all requested resource locks or returns false.
 func (s *Store) Acquire(ctx context.Context, names []string, owner string) (_ bool, err error) {
 	defer func() { err = stateError(err) }()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -350,12 +372,14 @@ func (s *Store) Acquire(ctx context.Context, names []string, owner string) (_ bo
 	return true, tx.Commit()
 }
 
+// Release removes locks held by the execution owner.
 func (s *Store) Release(ctx context.Context, owner string) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "DELETE FROM locks WHERE owner=?", owner)
 	return err
 }
 
+// Metadata retrieves non-secret durable execution metadata.
 func (s *Store) Metadata(ctx context.Context, key string) (_ string, err error) {
 	defer func() { err = stateError(err) }()
 	var v string
@@ -366,12 +390,14 @@ func (s *Store) Metadata(ctx context.Context, key string) (_ string, err error) 
 	return v, err
 }
 
+// SetMetadata stores only non-secret execution metadata; never store configuration blobs.
 func (s *Store) SetMetadata(ctx context.Context, key, value string) (err error) {
 	defer func() { err = stateError(err) }()
 	_, err = s.db.ExecContext(ctx, "INSERT INTO metadata VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", key, value)
 	return err
 }
 
+// Executions lists durable workflow instances.
 func (s *Store) Executions(ctx context.Context) (_ []Execution, err error) {
 	defer func() { err = stateError(err) }()
 	rows, err := s.db.QueryContext(ctx, "SELECT id,playbook,fingerprint,status FROM executions ORDER BY id")
@@ -390,7 +416,9 @@ func (s *Store) Executions(ctx context.Context) (_ []Execution, err error) {
 	return out, rows.Err()
 }
 
+// Attempt records a durable node execution attempt and categorized outcome.
 type Attempt struct {
+	// Node is a workflow node checkpoint; attempts are durable before effects.
 	Node     string `json:"node_id"`
 	Number   int    `json:"number"`
 	Status   string `json:"status"`
@@ -399,6 +427,7 @@ type Attempt struct {
 	Finished string `json:"finished,omitempty"`
 }
 
+// Attempts lists node attempt history for an execution.
 func (s *Store) Attempts(ctx context.Context, execution string) (_ []Attempt, err error) {
 	defer func() { err = stateError(err) }()
 	rows, err := s.db.QueryContext(ctx, "SELECT node_id,number,status,error_code,started,finished FROM attempts WHERE execution_id=? ORDER BY node_id,number", execution)

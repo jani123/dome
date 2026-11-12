@@ -9,12 +9,16 @@ import (
 	"strings"
 )
 
+// ID is a stable non-secret module/name resource identity.
 type ID struct {
 	Module string `json:"module"`
 	Name   string `json:"name"`
 }
 
+// String formats a stable identity; module and name must contain no secrets.
 func (id ID) String() string { return id.Module + ":" + id.Name }
+
+// Validate checks required identity fields and module syntax.
 func (id ID) Validate() error {
 	if id.Module == "" || id.Name == "" || strings.ContainsAny(id.Module, ":/ \t\n") {
 		return fmt.Errorf("resource module and name are required")
@@ -35,6 +39,7 @@ func (s Snapshot) Fingerprint() string {
 	return fmt.Sprintf("%x", sha256.Sum256(b))
 }
 
+// Action describes a change between observed and desired snapshots.
 type Action string
 
 const (
@@ -44,6 +49,7 @@ const (
 	Noop   Action = "no-op"
 )
 
+// Difference compares observed and desired snapshots without consulting persisted ownership.
 func Difference(actual, desired Snapshot) Action {
 	if actual == desired {
 		return Noop

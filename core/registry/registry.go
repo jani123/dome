@@ -8,8 +8,10 @@ import (
 	"github.com/jani123/dome/core/resource"
 )
 
+// Registry maps explicitly supplied module names to restoration implementations.
 type Registry struct{ modules map[string]resource.Module }
 
+// New constructs an explicit registry and rejects nil or duplicate modules.
 func New(modules ...resource.Module) (*Registry, error) {
 	r := &Registry{modules: map[string]resource.Module{}}
 	for _, m := range modules {
@@ -27,6 +29,7 @@ func New(modules ...resource.Module) (*Registry, error) {
 	return r, nil
 }
 
+// Names returns registered module names in sorted order.
 func (r *Registry) Names() []string {
 	names := []string{}
 	for n := range r.modules {
@@ -35,7 +38,11 @@ func (r *Registry) Names() []string {
 	sort.Strings(names)
 	return names
 }
+
+// Has reports whether a module is registered.
 func (r *Registry) Has(name string) bool { _, ok := r.modules[name]; return ok }
+
+// Restore asks the owning module for a validated deletion handle.
 func (r *Registry) Restore(id resource.ID) (resource.Resource, error) {
 	m, ok := r.modules[id.Module]
 	if !ok {

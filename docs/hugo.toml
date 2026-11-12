@@ -1,0 +1,8 @@
+baseURL = 'https://jani123.github.io/dome/'
+locale = 'en'
+title = 'Dome'
+disableKinds = ['taxonomy', 'term', 'RSS', 'sitemap']
+[markup.goldmark.renderer]
+  unsafe = false
+[params]
+  version = 'next'

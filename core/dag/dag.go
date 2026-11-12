@@ -23,13 +23,16 @@ type Repository interface {
 	Release(context.Context, string) error
 }
 type (
+	// Clock isolates retry waits and callback deadlines for deterministic tests.
 	Clock interface {
 		Sleep(context.Context, time.Duration) error
 		WithTimeout(context.Context, time.Duration) (context.Context, context.CancelFunc)
 	}
+	// RealClock uses cancellable host timers.
 	RealClock struct{}
 )
 
+// Sleep waits with cancellation support.
 func (RealClock) Sleep(ctx context.Context, d time.Duration) error {
 	timer := time.NewTimer(d)
 	defer timer.Stop()
@@ -41,6 +44,7 @@ func (RealClock) Sleep(ctx context.Context, d time.Duration) error {
 	}
 }
 
+// Engine schedules persisted workflows; callers must hold the store process guard.
 type Engine struct {
 	Store       Repository
 	Concurrency int
@@ -304,6 +308,7 @@ func verify(ctx context.Context, s *playbook.Step) error {
 	return ctx.Err()
 }
 
+// WithTimeout derives a cancellable deadline using the host clock.
 func (RealClock) WithTimeout(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, timeout)
 }

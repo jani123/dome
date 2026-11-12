@@ -19,8 +19,10 @@ import (
 )
 
 type (
+	// DesiredState evaluates Go-defined topology from an ephemeral configuration document.
 	DesiredState func(context.Context, config.Document) ([]resource.Resource, error)
-	Agent        struct {
+	// Agent composes registered modules, configuration, state, and playbooks.
+	Agent struct {
 		modules     []resource.Module
 		registry    *registry.Registry
 		books       map[string]*playbook.Playbook
@@ -30,13 +32,16 @@ type (
 		version     string
 		concurrency int
 	}
+	// Option configures an Agent before validation.
 	Option func(*Agent) error
 )
 
+// WithModules registers concrete modules explicitly; duplicate names are rejected by New.
 func WithModules(modules ...resource.Module) Option {
 	return func(a *Agent) error { a.modules = append(a.modules, modules...); return nil }
 }
 
+// WithSQLite selects durable state storage; callers must preserve it across restarts.
 func WithSQLite(path string) Option {
 	return func(a *Agent) error {
 		if path == "" {
@@ -47,18 +52,22 @@ func WithSQLite(path string) Option {
 	}
 }
 
+// WithDesiredState supplies typed topology evaluation once per invocation.
 func WithDesiredState(fn DesiredState) Option {
 	return func(a *Agent) error { a.desired = fn; return nil }
 }
 
+// WithSource sets the default configuration source; CLI source flags override it.
 func WithSource(source config.Source) Option {
 	return func(a *Agent) error { a.source = source; return nil }
 }
 
+// WithVersion sets the consumer agent version reported by the CLI.
 func WithVersion(version string) Option {
 	return func(a *Agent) error { a.version = version; return nil }
 }
 
+// WithConcurrency bounds independent DAG workers; n must be positive.
 func WithConcurrency(n int) Option {
 	return func(a *Agent) error {
 		if n < 1 {
@@ -69,6 +78,7 @@ func WithConcurrency(n int) Option {
 	}
 }
 
+// WithPlaybooks registers validated named workflows used by commands and transitions.
 func WithPlaybooks(books ...*playbook.Playbook) Option {
 	return func(a *Agent) error {
 		for _, book := range books {
@@ -84,6 +94,7 @@ func WithPlaybooks(books ...*playbook.Playbook) Option {
 	}
 }
 
+// New composes an agent without opening state or mutating host resources.
 func New(options ...Option) (*Agent, error) {
 	a := &Agent{books: map[string]*playbook.Playbook{}, source: config.Local{}, sqlite: ".dome/state.db", version: "dev", concurrency: 4}
 	for _, option := range options {
@@ -101,9 +112,17 @@ func New(options ...Option) (*Agent, error) {
 	a.registry = r
 	return a, nil
 }
-func (a *Agent) Command() *cobra.Command           { return cli.New(a) }
+
+// Command constructs a fresh Cobra command tree for this agent.
+func (a *Agent) Command() *cobra.Command { return cli.New(a) }
+
+// Execute runs the consumer CLI with the supplied cancellation context.
 func (a *Agent) Execute(ctx context.Context) error { return a.Command().ExecuteContext(ctx) }
-func (a *Agent) Modules() []string                 { return a.registry.Names() }
+
+// Modules returns registered module names in sorted order.
+func (a *Agent) Modules() []string { return a.registry.Names() }
+
+// Playbooks returns registered playbook names in sorted order.
 func (a *Agent) Playbooks() []string {
 	names := []string{}
 	for name := range a.books {
@@ -112,7 +131,10 @@ func (a *Agent) Playbooks() []string {
 	sort.Strings(names)
 	return names
 }
+
+// Version returns the application version, defaulting to dev.
 func (a *Agent) Version() string { return a.version }
+
 func (a *Agent) open(ctx context.Context, o cli.Options) (*state.Store, func(), error) {
 	path := o.StatePath
 	if path == "" {
@@ -159,6 +181,8 @@ func (a *Agent) reconciler(s *state.Store) *reconcile.Reconciler {
 	return &reconcile.Reconciler{Store: s, Registry: a.registry, Runner: &dag.Engine{Store: s, Concurrency: a.concurrency}, Playbooks: a.books}
 }
 
+// Plan loads configuration, validates resources, and observes changes without applying them.
+// It opens SQLite and holds its process guard for the invocation.
 func (a *Agent) Plan(ctx context.Context, o cli.Options) (*reconcile.Plan, error) {
 	if a.desired == nil {
 		return nil, fault.New(fault.Validation, "desired-state function is required for reconciliation")
@@ -175,6 +199,8 @@ func (a *Agent) Plan(ctx context.Context, o cli.Options) (*reconcile.Plan, error
 	return a.reconciler(s).Plan(ctx, resources, revision)
 }
 
+// Apply reconciles desired resources and prunes previously managed identities.
+// Verified resources may remain changed if a later operation fails; there is no global rollback.
 func (a *Agent) Apply(ctx context.Context, o cli.Options) (*reconcile.Plan, error) {
 	if a.desired == nil {
 		return nil, fault.New(fault.Validation, "desired-state function is required for reconciliation")
@@ -191,6 +217,7 @@ func (a *Agent) Apply(ctx context.Context, o cli.Options) (*reconcile.Plan, erro
 	return a.reconciler(s).Apply(ctx, resources, revision)
 }
 
+// Status returns persisted diagnostics, which are not proof of current host state.
 func (a *Agent) Status(ctx context.Context, o cli.Options) (any, error) {
 	s, close, err := a.open(ctx, o)
 	if err != nil {
@@ -227,6 +254,7 @@ func (a *Agent) Status(ctx context.Context, o cli.Options) (any, error) {
 	}{revision, items}, nil
 }
 
+// RunPlaybook runs or resumes a named workflow while holding the state guard.
 func (a *Agent) RunPlaybook(ctx context.Context, o cli.Options, name, resume string) (string, error) {
 	book, ok := a.books[name]
 	if !ok {
@@ -246,6 +274,7 @@ func (a *Agent) RunPlaybook(ctx context.Context, o cli.Options, name, resume str
 	return engine.Run(ctx, book, resume)
 }
 
+// Operations lists durable resource and workflow execution diagnostics.
 func (a *Agent) Operations(ctx context.Context, o cli.Options) ([]state.Operation, error) {
 	s, close, err := a.open(ctx, o)
 	if err != nil {

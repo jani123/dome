@@ -4,6 +4,84 @@ Dome is a Go library for compiling your own infrastructure agent. Resources and 
 
 Module: `github.com/jani123/dome`.
 
+## Create your own project
+
+The initializer creates a separate Go consumer module with a matching Codex skill,
+typed YAML configuration, and a file resource confined to its local sandbox.
+The first release is planned as `v0.1.0-rc.1` followed by `v0.1.0`; neither is
+published by this implementation. Once the stable version is released:
+
+```sh
+go run github.com/jani123/dome/cmd/dome@v0.1.0 init my-machine --module example.com/my-machine
+cd my-machine
+CGO_ENABLED=0 go build -o agent ./cmd/agent
+go test ./...
+./agent plan --json
+# Apply the inspected plan when ready:
+./agent apply --json
+```
+
+Use Linux amd64/arm64 and Go 1.26+. Native release smoke tests gate platform
+claims. Open Codex in the project and ask it to use the `dome` skill. Adding a Go
+dependency alone does not install skills. The compiled consumer runs without AI.
+Generate a fresh subdirectory when adding to an existing project; the initializer
+refuses existing destinations and never runs the generated agent. It resolves
+modules in a staged directory before publishing it. Parent directories must exist
+and must not be symlinks. Preserve `sandbox/.gitkeep` when committing the starter.
+
+The library, initializer, skill, templates, and docs use one exact version. For
+updates, generate a temporary sibling project at the target version, review its
+assets and dependency, and merge changes while preserving custom Go/instructions.
+Build/test and inspect a fresh JSON plan before deployment; back up state with the
+agent stopped before migrations. No automatic source replacement or host rollback
+is provided.
+
+Read the [guides in source](docs/content/_index.md),
+[development guide site](https://jani123.github.io/dome/next/), and
+[generated API reference](https://pkg.go.dev/github.com/jani123/dome). The hosted
+site and tagged API availability still require first deployment/release verification.
+
+## Onboarding development and releases
+
+```sh
+make build-initializer              # .build/dome; dev builds refuse init
+make docs                           # pinned Hugo build + internal-link check
+scripts/build-docs.sh next           # reuse installed .build/tools/hugo
+```
+
+To test generation before the first public tag, run the generated-consumer
+integration test: `go test -tags=integration ./tests/integration -run
+TestGeneratedConsumer -count=1`. It explicitly replaces the unpublished dependency
+with this checkout. For CLI development only, `make build-initializer
+VERSION=v0.1.0-rc.1` injects candidate metadata; dependency resolution still requires
+that public module version. This is not a published release.
+
+GitHub Actions runs all four repository checks plus native amd64/arm64 starter
+smokes and docs checks. `scripts/install-hugo.sh` downloads the version in
+`.hugo-version` from the official GitHub release and checks its published SHA-256.
+Docs use a minimal repository-owned Hugo layout. Pages is configured with Actions;
+the docs workflow publishes `/next/` and rebuilds published version snapshots from
+their immutable tags using each tag's pinned Hugo. `/latest/` selects a stable
+published release; RCs do not replace it. No personal access token is required.
+
+Prepare a release through a reviewed change updating the changelog and migration
+notes. A maintainer-created `v0.x.y[-rc.n]` tag runs the full suite, creates Linux
+initializer archives/checksums/license notices and vendored source, and tests public tagged-module
+resolution and execution on native amd64/arm64 runners. Only then is a draft
+GitHub Release created. Review/curate its notes before publishing; publication
+triggers docs deployment. Library versions become public through tags independently
+of publishing a GitHub Release. Never move a published tag; use a new release and,
+when needed, module retraction. The release workflow does not distribute the demo
+agent or customer agents.
+
+Local artifacts can be built from a clean tagged checkout using
+`scripts/release.sh v0.1.0-rc.1`; `scripts/smoke-release.sh v0.1.0-rc.1 amd64`
+checks actual public module resolution. Run it on the matching architecture.
+These commands require a real tag and are not substitutes for native CI.
+See [compatibility/support policy](docs/content/releases.md),
+[customer licensing](docs/content/licensing.md), and
+[dependency review](docs/DEPENDENCY_REVIEW.md).
+
 ## Build and try the example
 
 Use Linux and Go 1.26 or newer. `go.mod` pins dependency versions; Go 1.25 with automatic toolchain downloads enabled can bootstrap the required toolchain. Docker is needed only for container tests.
@@ -176,6 +254,27 @@ The suite runs the same push/update/reconcile/persistence/failure flow over both
 Image builds forward the configured proxy environment as standard Docker build arguments and use the host build network so the devcontainer's proxy hostname is reachable. Runtime test containers use a separate isolated bridge network. The harness adds the Docker endpoint to its own `NO_PROXY` settings before starting HTTP clients so published test ports are reached directly. The proxy must allow Docker Hub image pulls and Debian package repositories; no external network is needed for Git traffic after the image is built. The local image and Docker build cache are retained for subsequent runs, while containers, repositories, keys, and temporary volumes are cleaned up.
 
 The systemd module is tested with an injected command runner. Live systemd tests are not part of the ordinary container suite because its containers do not run systemd. It supports loaded `.service` units with enabled/disabled and active/inactive/failed states; other unit states fail explicitly. Pruning stops and disables a service rather than uninstalling it.
+
+## Customer source access and licensing intent
+
+Paid development, installation, and support are welcome. Customers receiving a
+compiled Dome-based agent should receive its corresponding source, dependency
+versions, build instructions, and infrastructure configuration so they can
+modify and rebuild the agent independently or hire another provider. Customer
+handover should also establish control of repositories, credentials, and SOPS
+keys without publishing secrets.
+
+Dome is licensed under **GPL-3.0-only**, without a linking exception; see
+[LICENSE](LICENSE). Distributing a Go agent linked with Dome generally requires
+providing the combined agent under GPLv3 with its
+corresponding source, not merely the library's source. Private use does not
+require public source publication. Managing a separate application with Dome
+does not, by itself, place that application under GPLv3.
+
+See the [GNU GPL FAQ on GPL libraries](https://www.gnu.org/licenses/gpl-faq.html#IfLibraryIsGPL)
+and [GPLv3 source-delivery terms](https://www.gnu.org/licenses/gpl-3.0.html#section6).
+The recommended customer handover supplies source alongside the binary;
+GPLv3 itself also allows other compliant source-delivery methods.
 
 ## Package layout
 

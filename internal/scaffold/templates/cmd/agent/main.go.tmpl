@@ -1,0 +1,48 @@
+package main
+
+import (
+ "context"
+ "fmt"
+ "os"
+ "os/signal"
+ "path/filepath"
+ "syscall"
+
+ "github.com/jani123/dome/agent"
+ "github.com/jani123/dome/cli"
+ "github.com/jani123/dome/config"
+ "github.com/jani123/dome/core/fault"
+ "github.com/jani123/dome/core/resource"
+ "github.com/jani123/dome/modules/file"
+)
+
+type Settings struct {
+ Content string `yaml:"content"`
+ Managed bool `yaml:"managed"`
+}
+
+type Secrets struct{}
+
+func desired(ctx context.Context, doc config.Document) ([]resource.Resource, error) {
+ settings, _, err := config.Parse[Settings, Secrets](ctx, doc, nil)
+ if err != nil { return nil, err }
+ if !settings.Managed { return nil, nil }
+ // The initializer creates sandbox. Keep resource identity stable by always
+ // invoking this starter from the project directory, including under a supervisor.
+ root, err := filepath.Abs("sandbox")
+ if err != nil { return nil, fault.Wrap(fault.Validation, err) }
+ return []resource.Resource{&file.File{Path: filepath.Join(root, "hello.txt"), Content: []byte(settings.Content), Mode: 0o640}}, nil
+}
+
+func main() {
+ ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+ defer cancel()
+ a, err := agent.New(
+  agent.WithModules(file.Module{}),
+  agent.WithSQLite(".dome/state.db"),
+  agent.WithSource(config.Local{Path: "config.yaml"}),
+  agent.WithDesiredState(desired),
+ )
+ if err == nil { err = a.Execute(ctx) }
+ if err != nil { fmt.Fprintln(os.Stderr, agent.ErrorText(err)); os.Exit(cli.ExitCode(err)) }
+}

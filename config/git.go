@@ -18,6 +18,7 @@ import (
 )
 
 type (
+	// GitOptions identifies committed configuration; SSH requires a key and known_hosts.
 	GitOptions struct {
 		URL         string
 		Ref         string
@@ -27,15 +28,18 @@ type (
 		KnownHosts  string
 		AllowHTTP   bool
 	}
+	// GitTransport is the injectable committed-blob retrieval boundary.
 	GitTransport interface {
 		Fetch(context.Context, GitOptions) (Document, error)
 	}
+	// Git loads typed configuration and encrypted secrets from one commit.
 	Git struct {
 		Options   GitOptions
 		Transport GitTransport
 	}
 )
 
+// Load validates the source and fetches committed configuration through its transport.
 func (s Git) Load(ctx context.Context) (Document, error) {
 	if err := s.Options.Validate(); err != nil {
 		return Document{}, hidden(err, "invalid Git configuration source")
@@ -51,6 +55,7 @@ func (s Git) Load(ctx context.Context) (Document, error) {
 	return d, nil
 }
 
+// Validate rejects unsafe paths, unsupported transports, and missing SSH verification.
 func (o GitOptions) Validate() error {
 	u, err := url.Parse(o.URL)
 	if err != nil || u.Host == "" || (u.Scheme != "ssh" && u.Scheme != "https" && !(u.Scheme == "http" && o.AllowHTTP)) {
@@ -78,6 +83,7 @@ func (o GitOptions) Validate() error {
 // GoGit reads committed blobs directly into memory; secrets are never checked out.
 type GoGit struct{}
 
+// Fetch retrieves committed blobs in memory with SSH host verification when applicable.
 func (GoGit) Fetch(ctx context.Context, o GitOptions) (Document, error) {
 	var auth transport.AuthMethod
 	u, err := url.Parse(o.URL)

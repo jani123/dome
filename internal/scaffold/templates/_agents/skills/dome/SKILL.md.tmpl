@@ -1,0 +1,44 @@
+---
+name: dome
+description: Author, validate, plan, and operate this project's Go infrastructure agent built with Dome. Use for Dome resources, playbooks, configuration, and recovery.
+---
+
+# Dome consumer workflow
+
+These instructions and templates match Dome {{.Version}}.
+
+Before authoring, compare `go list -m -f '{{"{{.Version}}"}}' github.com/jani123/dome`
+with `dome.json` fields `dome_version`, `skill_version`, and `template_version`.
+If versions differ, stop API-dependent changes: run the initializer at the pinned
+dependency version into a temporary project, review the skill/template differences,
+and synchronize metadata/assets with the dependency. Do not overwrite custom Go
+or instructions. Local replacements require checking the replacement source too.
+
+Use `go doc` and source from `go list -m -f '{{"{{.Dir}}"}}' github.com/jani123/dome`
+for the installed API; use version-matched examples and docs. Do not invent APIs
+from current-main documentation for an older dependency.
+
+Define topology in Go, register modules explicitly, and decode values into typed
+YAML structs. Use SOPS for encrypted secrets. Resource IDs must remain stable;
+never persist secret contents. Snapshots should contain hashes/non-secret data.
+
+Build with `CGO_ENABLED=0 go build -o agent ./cmd/agent`, run `go test ./...`, then
+inspect `./agent plan --json` from the project root. Check updates and pruning
+against the user's request. Apply only when requested, using `./agent apply --json`.
+The compiled agent runs independently of Codex; no model calls belong in runtime.
+
+For playbooks, inspect `go doc github.com/jani123/dome/core/playbook`. Every step
+needs Observe/Apply/Verify plus safe repeatability or explicit Recover. Declare
+dependencies and resource locks; bump the playbook Version when callbacks change.
+For custom modules, implement the public resource contracts and restore deletion
+handles without old secret values. Observe actual host state, verify before
+recording applied state, and prune only previously managed resources.
+
+For failures use `./agent operations list`, `operations inspect <id>`, and
+`playbook run <name> --resume <id>` as appropriate. Re-observe interrupted work;
+never bypass an unfinished transition by changing/removing its target or deleting
+SQLite state. Failed dependencies stay blocked. Keep the last successful Git
+revision on failures. Inspect the exact installed API before adding recovery code.
+
+Hand over source, dependency/build material, and configuration with customer
+binaries; preserve the customer's ability to rebuild and change providers.

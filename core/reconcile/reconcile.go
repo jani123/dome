@@ -15,6 +15,7 @@ import (
 	"github.com/jani123/dome/core/state"
 )
 
+// Repository is the injectable ownership, attempt, and transition persistence boundary.
 type Repository interface {
 	Managed(context.Context) ([]state.Managed, error)
 	SaveManaged(context.Context, state.Managed) error
@@ -26,9 +27,11 @@ type Repository interface {
 	SetMetadata(context.Context, string, string) error
 }
 type (
+	// PlaybookRunner runs or resumes workflows linked to resource transitions.
 	PlaybookRunner interface {
 		Run(context.Context, *playbook.Playbook, string) (string, error)
 	}
+	// Change describes observed/desired snapshots and optional pruning or workflow recovery.
 	Change struct {
 		ID       resource.ID       `json:"id"`
 		Action   resource.Action   `json:"action"`
@@ -39,10 +42,12 @@ type (
 		Resume   string            `json:"execution_id,omitempty"`
 		target   resource.Resource
 	}
+	// Plan contains validated observed changes for a configuration revision.
 	Plan struct {
 		Revision string   `json:"revision"`
 		Changes  []Change `json:"changes"`
 	}
+	// Reconciler applies verified changes; callers must hold the repository process guard.
 	Reconciler struct {
 		Store     Repository
 		Registry  *registry.Registry
