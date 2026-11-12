@@ -9,7 +9,9 @@ The linked dependencies use Apache-2.0, MIT/ISC/BSD-style, MPL-2.0, and public-d
 terms. No incompatible license was identified in this review. MPL-2.0 components
 include SOPS and HashiCorp libraries; their license's standard Exhibit B text is
 not by itself a project-specific declaration of secondary-license incompatibility.
-Source headers and licensing files were inspected for such declarations.
+Source headers and licensing files were inspected for such declarations; a scan
+of 4,065 linked external Go files found no secondary-license incompatibility
+header.
 `filepath-securejoin` includes BSD-3-Clause and MPL-2.0 files; retain its licensing
 material. SQLite's bundled third-party licenses must be included as well.
 
@@ -30,3 +32,7 @@ also review licenses/notices for their own extra modules and provide correspondi
 source/build material for the complete distributed covered agent. The generated
 starter includes the GPLv3 text; do not treat the initializer's notice inventory
 as an inventory of a customer's separately extended agent.
+
+Release source archives include the repository and vendored module sources so
+recipients can rebuild with `-mod=vendor` without resolving Go dependencies over
+the network (an appropriate Go toolchain remains a prerequisite).

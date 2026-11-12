@@ -11,10 +11,11 @@ The starter manages a local sandbox and needs no root permissions.
 
 ## Bootstrap
 
-After `v0.1.0` is published:
+Use the published release matching these guides. Development guides show the
+planned first stable version, which requires publication before it can resolve:
 
 ```sh
-go run github.com/jani123/dome/cmd/dome@v0.1.0 init my-machine --module example.com/my-machine
+go run github.com/jani123/dome/cmd/dome@{{< dome-version >}} init my-machine --module example.com/my-machine
 cd my-machine
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...

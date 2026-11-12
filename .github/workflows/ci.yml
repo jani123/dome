@@ -41,6 +41,7 @@ jobs:
           go-version-file: go.mod
       - run: go test -tags=integration ./internal/scaffold ./tests/integration -run 'TestPublishBoundaries|TestGeneratedConsumer' -count=1 -timeout=10m
   docs:
+    name: Documentation and workflow checks
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -48,6 +49,9 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: go.mod
+      - run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
+      - run: actionlint -shellcheck=
+      - run: bash -n scripts/*.sh
       - run: scripts/install-hugo.sh
       - run: scripts/build-docs.sh next
       - run: go run scripts/dependency-notices.go ./cmd/dome .build/THIRD_PARTY_NOTICES.txt

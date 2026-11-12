@@ -366,8 +366,12 @@ and versioned Pages assembly from published immutable release tags.
 Verified locally: all four repository suites passed, including container E2E and
 real Git HTTP/SSH integration. The generated-consumer tests use an explicit local
 replacement until a public tag exists. Hugo development/site assembly and link
-checks passed; actionlint and shell syntax checks passed. Final package rehearsal
-and any later verification are recorded below as work progresses.
+checks passed; actionlint and shell syntax checks passed. Packaging was rehearsed in an isolated local clone with local-only RC/stable
+tags: amd64 and arm64 archives and a vendored source archive were produced,
+checksums passed, the amd64 initializer ran, and source rebuilt with dependency
+network access disabled using Go 1.26. Versioned docs assembled RC, stable,
+latest, and next snapshots with working internal links. Cross-builds are not
+native arm64 verification. The original repository has no release tags.
 
 Outstanding acceptance: native arm64 execution, real Codex discovery/authoring,
 public tagged-module bootstrap, pkg.go.dev recognition, GitHub required-check and
@@ -378,3 +382,13 @@ absent; Go tests validate the rendered front matter and packaged source instead.
 
 Keep command details and operational instructions in README and the guides;
 use this checklist to track delivery and acceptance.
+
+Local commits are prepared. Remote publication cannot be performed from the
+current container: no GitHub token or Git credential helper is configured.
+No remote settings changes, pushes, releases, or deployments were attempted.
+
+Final local verification after implementation: `make check`, `make test-race`,
+`make test-e2e`, and `make test-integration` passed. The full container E2E suite
+and real Git HTTP/SSH suite ran without skips. Generated-consumer permission,
+update, idempotency, invalid-config, pruning, collision, and cleanup checks passed.
+Cancellation cleanup was also checked through its real filesystem integration test.

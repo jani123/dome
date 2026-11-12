@@ -59,7 +59,12 @@ that public module version. This is not a published release.
 GitHub Actions runs all four repository checks plus native amd64/arm64 starter
 smokes and docs checks. `scripts/install-hugo.sh` downloads the version in
 `.hugo-version` from the official GitHub release and checks its published SHA-256.
-Docs use a minimal repository-owned Hugo layout. Pages is configured with Actions;
+Docs use a minimal repository-owned Hugo layout. In GitHub branch/ruleset settings,
+require `check`, `test-race`, `test-e2e`, `test-integration`,
+`Starter (ubuntu-24.04)`, `Starter (ubuntu-24.04-arm)`, and
+`Documentation and workflow checks` before merging into `main`. Verify runner
+availability and those check names after the first actual Actions run.
+Pages is configured with Actions;
 the docs workflow publishes `/next/` and rebuilds published version snapshots from
 their immutable tags using each tag's pinned Hugo. `/latest/` selects a stable
 published release; RCs do not replace it. No personal access token is required.

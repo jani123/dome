@@ -32,6 +32,14 @@ func TestPublishBoundaries(t *testing.T) {
 	require.Error(t, scaffold.Publish(ctx, filepath.Join(root, "link", "other"), files, nil))
 	require.Error(t, scaffold.Publish(ctx, filepath.Join(root, "escape"), map[string][]byte{"../outside": {}}, nil))
 	require.NoFileExists(t, filepath.Join(root, "outside"))
+	// Cancellation after dependency resolution must not publish partial output.
+	cancelled, cancel := context.WithCancel(ctx)
+	cancelledDest := filepath.Join(root, "cancelled")
+	require.ErrorIs(t, scaffold.Publish(cancelled, cancelledDest, files, func(context.Context, string) error {
+		cancel()
+		return nil
+	}), context.Canceled)
+	require.NoDirExists(t, cancelledDest)
 	// A concurrent creator must win without its files being overwritten.
 	other := filepath.Join(root, "other")
 	require.Error(t, scaffold.Publish(ctx, other, files, func(context.Context, string) error {
