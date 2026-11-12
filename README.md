@@ -177,7 +177,7 @@ Image builds forward the configured proxy environment as standard Docker build a
 
 The systemd module is tested with an injected command runner. Live systemd tests are not part of the ordinary container suite because its containers do not run systemd. It supports loaded `.service` units with enabled/disabled and active/inactive/failed states; other unit states fail explicitly. Pruning stops and disables a service rather than uninstalling it.
 
-## Package layout and next work
+## Package layout
 
 - `agent`, `cli`, `config`: public composition, Cobra commands, typed local/Git/SOPS loading.
 - `core/resource`, `core/registry`, `core/reconcile`: resource contracts, registration, planning, verification, and ownership pruning.
@@ -185,25 +185,3 @@ The systemd module is tested with an injected command runner. Live systemd tests
 - `modules/file`, `modules/systemd`: initial infrastructure modules.
 - `examples/basic-agent`: compiled consumer and demonstration transition resource.
 - `tests/e2e`, `tests/integration`: independent container suites.
-
-## Plan verification
-
-This table maps the agreed scope to implementation and executable evidence. The required checks are `make check`, `make test-race`, `make test-e2e`, and `make test-integration`; the integration target includes the real boundary tests throughout the module as well as the separate Git server suite.
-
-| Plan requirement | Implementation and evidence |
-| --- | --- |
-| Architecture, explicit public API, external modules (§1–2, §13) | `agent`, `core/resource`, `core/registry`; `tests/integration/consumer_test.go` compiles a separate Go module with a custom resource. |
-| File/systemd resources, observe/plan/apply/verify, ownership and pruning (§3) | `modules/file`, `modules/systemd`, `core/reconcile`; mocked module/reconciliation tests, atomic filesystem integration tests, container create/update/no-op/prune/unrelated-file scenarios. |
-| Safe transitions and applied-state verification (§4) | Durable resource/target/playbook execution intents; unit tests for unsafe transitions, failed verification and interrupted finalization; container process-crash recovery after the version file changed. |
-| DAG validation, concurrency, dependencies, locks, retries and recovery branches (§5) | `core/playbook` and `core/dag` tests cover cycles, missing dependencies, rolling scheduling, conflicting locks, retry policies, deadlines, failure blocking and explicit recovery. |
-| Observe-led crash recovery and stable execution/node IDs (§6) | Injected checkpoint failure tests and real container process exits after external effects, before completion persistence; completed work is verified rather than blindly repeated. |
-| SQLite migrations, ownership, revisions, operations, attempts and locks (§7) | `core/state/sqlite_integration_test.go` covers persistence, schema upgrades, foreign keys, atomic lock acquisition, process guards, canonical paths and attempt history. |
-| Typed YAML, SOPS host secrets, Git retrieval, failure safety (§8) | Mocked loaders, real SOPS boundary tests, container host-key tests, and real HTTP and authenticated SSH repository integration. |
-| CLI commands, JSON, validation/execution exit codes (§9) | `cli` tests cover every requested command, polling, invalid commands/flags, source conflicts, listings and JSON plans/status. |
-| Contextual cause-preserving errors and stable categories (§10) | `core/fault`, module boundary wrappers and tests; DAG errors carry execution/node context without masking observation or verification categories. |
-| Testify/mock unit suite alongside testable packages (§11) | Default `go test ./...`; real I/O boundary tests are explicitly tagged `integration` rather than mixed into the unit suite. |
-| Ginkgo/Gomega/Testcontainers E2E and required real Git server suite (§12) | `tests/e2e` exercises the compiled agent inside Linux containers; `tests/integration/git_test.go` creates/pushes real HTTP/SSH repositories and verifies updates, revisions, restart, secrets and failure handling. |
-| Milestones and definition of done (§14–15) | The commands above verify the runnable example, external module registration, persistence, reconciliation/pruning, DAG recovery, transitions, Git and CLI. |
-| Build, usage, tests and limitations report (§16) | Build/run examples and supported/unsupported behavior are documented in this README. |
-
-Live systemd integration remains conditional under milestone 5: ordinary test containers do not run systemd, and no privileged host access is required. PostgreSQL was explicitly excluded from the initial slice. Incremental Git caching, private HTTPS credentials, submodules, LFS, and webhook delivery are not requirements of this plan. Custom modules remain responsible for safe default operations and secret-free snapshots and diagnostics.
