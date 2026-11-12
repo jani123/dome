@@ -1,0 +1,8 @@
+.devbox/
+.build/
+.codex-local/
+.env
+.env.*
+!.env.example
+
+.dome/

@@ -1,0 +1,161 @@
+//go:build integration
+
+package state_test
+
+import (
+	"context"
+	"database/sql"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/jani123/dome/core/resource"
+	"github.com/jani123/dome/core/state"
+	"github.com/stretchr/testify/require"
+)
+
+func TestSQLitePersistenceMigrationsAndGuard(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "state.db")
+	s, err := state.Open(path)
+	require.NoError(t, err)
+	unlock, err := s.Guard(ctx)
+	require.NoError(t, err)
+	other, err := state.Open(path)
+	require.NoError(t, err)
+	_, err = other.Guard(ctx)
+	require.Error(t, err)
+	require.NoError(t, other.Close())
+	v := state.Managed{ID: resource.ID{Module: "file", Name: "/x"}, Applied: resource.Snapshot{Exists: true, Value: "digest"}, Revision: "abc"}
+	require.NoError(t, s.SaveManaged(ctx, v))
+	require.NoError(t, s.SetRevision(ctx, "abc"))
+	id, err := s.BeginOperation(ctx, "file:/x", "create")
+	require.NoError(t, err)
+	require.NoError(t, s.EndOperation(ctx, id, "succeeded", ""))
+	require.NoError(t, s.NewExecution(ctx, "exec", "book", "fp"))
+	require.NoError(t, s.SaveNode(ctx, "exec", state.Node{ID: "node", Status: "running", Attempts: 1}))
+	unlock()
+	require.NoError(t, s.Close())
+	s, err = state.Open(path)
+	require.NoError(t, err)
+	defer s.Close()
+	m, err := s.Managed(ctx)
+	require.NoError(t, err)
+	require.Equal(t, []state.Managed{v}, m)
+	revision, err := s.Revision(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "abc", revision)
+	nodes, err := s.Nodes(ctx, "exec")
+	require.NoError(t, err)
+	require.Equal(t, 1, nodes["node"].Attempts)
+	ops, err := s.Operations(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "succeeded", ops[0].Status)
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	require.EqualValues(t, 0o600, info.Mode().Perm())
+	require.Error(t, s.SaveNode(ctx, "missing", state.Node{ID: "node", Status: "running"}))
+}
+
+func TestLockAcquisitionIsAtomic(t *testing.T) {
+	ctx := context.Background()
+	s, err := state.Open(":memory:")
+	require.NoError(t, err)
+	defer s.Close()
+	ok, err := s.Acquire(ctx, []string{"b"}, "one")
+	require.NoError(t, err)
+	require.True(t, ok)
+	ok, err = s.Acquire(ctx, []string{"a", "b"}, "two")
+	require.NoError(t, err)
+	require.False(t, ok)
+	ok, err = s.Acquire(ctx, []string{"a"}, "three")
+	require.NoError(t, err)
+	require.True(t, ok)
+	require.NoError(t, s.Release(ctx, "one"))
+	ok, err = s.Acquire(ctx, []string{"b"}, "two")
+	require.NoError(t, err)
+	require.True(t, ok)
+}
+
+func TestAttemptHistoryAndUpgradeFromVersionOne(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "state.db")
+	s, err := state.Open(path)
+	require.NoError(t, err)
+	require.NoError(t, s.NewExecution(ctx, "exec", "book", "fp"))
+	require.NoError(t, s.SaveNode(ctx, "exec", state.Node{ID: "step", Status: "running", Attempts: 1}))
+	require.NoError(t, s.SaveNode(ctx, "exec", state.Node{ID: "step", Status: "failed", Attempts: 1, Code: "apply"}))
+	require.NoError(t, s.SaveNode(ctx, "exec", state.Node{ID: "step", Status: "running", Attempts: 2}))
+	require.NoError(t, s.SaveNode(ctx, "exec", state.Node{ID: "step", Status: "succeeded", Attempts: 2}))
+	attempts, err := s.Attempts(ctx, "exec")
+	require.NoError(t, err)
+	require.Len(t, attempts, 2)
+	require.Equal(t, "failed", attempts[0].Status)
+	require.Equal(t, "apply", attempts[0].Code)
+	require.NotEmpty(t, attempts[0].Started)
+	require.NotEmpty(t, attempts[0].Finished)
+	require.Equal(t, "succeeded", attempts[1].Status)
+	require.NoError(t, s.Close())
+	// Reconstruct the v1 schema while retaining its execution and node rows.
+	db, err := sql.Open("sqlite", path)
+	require.NoError(t, err)
+	_, err = db.Exec("DROP TABLE attempts; ALTER TABLE nodes DROP COLUMN error_code; DELETE FROM schema_migrations WHERE version=2;")
+	require.NoError(t, err)
+	require.NoError(t, db.Close())
+	s, err = state.Open(path)
+	require.NoError(t, err)
+	defer s.Close()
+	nodes, err := s.Nodes(ctx, "exec")
+	require.NoError(t, err)
+	require.Equal(t, 2, nodes["step"].Attempts)
+	require.Equal(t, "succeeded", nodes["step"].Status)
+	require.NoError(t, s.SaveNode(ctx, "exec", state.Node{ID: "step", Status: "running", Attempts: 3}))
+	attempts, err = s.Attempts(ctx, "exec")
+	require.NoError(t, err)
+	require.Len(t, attempts, 1)
+}
+
+func TestGuardUsesCanonicalPathAndMemoryGuard(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "state.db")
+	s, err := state.Open(path)
+	require.NoError(t, err)
+	defer s.Close()
+	unlock, err := s.Guard(ctx)
+	require.NoError(t, err)
+	defer unlock()
+	alias := filepath.Join(dir, "alias.db")
+	require.NoError(t, os.Symlink(path, alias))
+	other, err := state.Open(alias)
+	require.NoError(t, err)
+	defer other.Close()
+	_, err = other.Guard(ctx)
+	require.Error(t, err)
+	m, err := state.Open(":memory:")
+	require.NoError(t, err)
+	defer m.Close()
+	release, err := m.Guard(ctx)
+	require.NoError(t, err)
+	_, err = m.Guard(ctx)
+	require.Error(t, err)
+	release()
+	release, err = m.Guard(ctx)
+	require.NoError(t, err)
+	release()
+}
+
+func TestRecoveryMetadataPrefixIsLiteral(t *testing.T) {
+	ctx := context.Background()
+	store, err := state.Open(":memory:")
+	require.NoError(t, err)
+	defer store.Close()
+	require.NoError(t, store.SetMetadata(ctx, "transition:a", "intent"))
+	require.NoError(t, store.SetMetadata(ctx, "revision", "abc"))
+	records, err := store.MetadataByPrefix(ctx, "transition:")
+	require.NoError(t, err)
+	require.Equal(t, map[string]string{"transition:a": "intent"}, records)
+	records, err = store.MetadataByPrefix(ctx, "%")
+	require.NoError(t, err)
+	require.Empty(t, records)
+}

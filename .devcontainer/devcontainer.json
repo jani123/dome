@@ -1,0 +1,35 @@
+{
+  "name": "Dome development",
+  "dockerComposeFile": "compose.yaml",
+  "service": "workspace",
+  "workspaceFolder": "/workspaces/dome",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "devbox",
+  "updateRemoteUserUID": true,
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
+      "version": "latest",
+      "moby": false,
+      "dockerDashComposeVersion": "v2",
+      "installDockerBuildx": true
+    }
+  },
+  "mounts": [
+    "source=dome-devbox-${devcontainerId},target=/workspaces/dome/.devbox,type=volume",
+    "source=dome-cache-${devcontainerId},target=/home/devbox/.cache,type=volume",
+    "source=dome-go-${devcontainerId},target=/home/devbox/go,type=volume",
+    "source=dome-npm-${devcontainerId},target=/home/devbox/.local/npm,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/prepare.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["jetpack-io.devbox", "golang.go"],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "Devbox",
+        "terminal.integrated.profiles.linux": {
+          "Devbox": {"path": "/usr/local/bin/devbox", "args": ["shell"]}
+        }
+      }
+    }
+  }
+}

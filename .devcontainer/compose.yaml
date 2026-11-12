@@ -1,0 +1,43 @@
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    init: true
+    volumes:
+      - ..:/workspaces/dome
+    networks: [private]
+    dns: [127.0.0.1]
+    environment:
+      HTTP_PROXY: http://proxy:3128
+      HTTPS_PROXY: http://proxy:3128
+      http_proxy: http://proxy:3128
+      https_proxy: http://proxy:3128
+      NO_PROXY: localhost,127.0.0.1,::1
+      no_proxy: localhost,127.0.0.1,::1
+    depends_on:
+      proxy:
+        condition: service_healthy
+
+  proxy:
+    build:
+      context: proxy
+    networks: [private, internet]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp, /run]
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --proxy, 'http://127.0.0.1:3128', 'https://proxy.golang.org/']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+networks:
+  private:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.gateway_mode_ipv4: isolated
+  internet:

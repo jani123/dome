@@ -1,0 +1,11 @@
+Port 2222
+HostKey /run/git-test-server/ssh_host_ed25519_key
+PidFile /run/git-test-server/sshd.pid
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+PermitRootLogin no
+AllowUsers git
+UsePAM no
+PrintMotd no

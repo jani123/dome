@@ -1,0 +1,78 @@
+version: "3"
+
+includes:
+  devcontainer: .devcontainer/Taskfile.yml
+
+tasks:
+  prepare:
+    desc: Prepare local development directories
+    cmds:
+      - mkdir -p .build .codex-local
+    status:
+      - test -d .build && test -d .codex-local
+
+  doctor:
+    desc: Verify the Go development toolchain
+    cmds:
+      - go version
+      - gopls version
+      - dlv version
+      - gofumpt --version
+      - git --version
+      - task --list
+
+  dev:setup:
+    desc: Prepare directories and download dependencies when a Go module exists
+    cmds:
+      - task: prepare
+      - 'if test -f go.mod; then go mod download; fi'
+
+  module:
+    internal: true
+    preconditions:
+      - sh: test -f go.mod
+        msg: 'Initialize a Go module first: go mod init <module-path>'
+
+  build:
+    desc: Build the standalone example agent
+    deps: [module, prepare]
+    cmds:
+      - CGO_ENABLED=0 go build -trimpath -o .build/agent ./examples/basic-agent {{.CLI_ARGS}}
+
+  test:
+    desc: Run Go tests
+    deps: [module]
+    cmds:
+      - go test {{.CLI_ARGS}} ./...
+
+  fmt:
+    desc: Format Go sources
+    deps: [module]
+    cmds:
+      - gofumpt -w agent cli config core modules examples internal tests
+
+  check:
+    desc: Check Go formatting, vet packages and run tests
+    deps: [module]
+    cmds:
+      - test -z "$(gofumpt -l agent cli config core modules examples internal tests)"
+      - go vet ./...
+      - task: test
+
+  test:race:
+    desc: Run unit tests with the Go race detector
+    deps: [module]
+    cmds:
+      - go test -race ./... {{.CLI_ARGS}}
+
+  test:e2e:
+    desc: Run the standalone agent container E2E suite
+    deps: [module]
+    cmds:
+      - go test -tags=e2e ./tests/e2e -count=1 -timeout=10m {{.CLI_ARGS}}
+
+  test:integration:
+    desc: Run real Git HTTP and SSH integration tests
+    deps: [module]
+    cmds:
+      - go test -tags=integration ./... -count=1 -timeout=10m {{.CLI_ARGS}}
