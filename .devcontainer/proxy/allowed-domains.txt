@@ -44,6 +44,10 @@ objects.githubusercontent.com
 release-assets.githubusercontent.com
 github-releases.githubusercontent.com
 
+# GitHub documentation and Dome's GitHub Pages site.
+docs.github.com
+jani123.github.io
+
 # Devbox/Nix resolution and caches.
 www.nixsearch.com
 search.devbox.sh

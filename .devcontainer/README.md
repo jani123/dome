@@ -39,7 +39,10 @@ separate `task test:e2e` and `task test:integration` suites.
 
 The workspace uses an internal Docker network. HTTP(S) egress goes
 through the Squid allowlist in `proxy/allowed-domains.txt`; direct external
-traffic and public DNS are blocked. Use HTTPS Git URLs. No host home directory
+traffic and public DNS are blocked. Use HTTPS Git URLs, such as
+`https://github.com/jani123/dome.git`; SSH remotes do not use this HTTP proxy.
+The allowlist includes GitHub repository/API/release hosts, `docs.github.com`,
+and `jani123.github.io` for Dome's documentation site. No host home directory
 or Docker socket is mounted, and no application ports are published.
 
 ## Docker-in-Docker
