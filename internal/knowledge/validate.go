@@ -196,9 +196,17 @@ func parse(data []byte) (document, error) {
 		return doc, fmt.Errorf("unclosed front matter")
 	}
 	decoder := yaml.NewDecoder(bytes.NewReader(data[4 : 4+end]))
-	if err := decoder.Decode(&doc.meta); err != nil {
+	var node yaml.Node
+	if err := decoder.Decode(&node); err != nil {
 		return doc, err
 	}
+	if len(node.Content) != 1 || node.Content[0].Kind != yaml.MappingNode {
+		return doc, fmt.Errorf("expected mapping")
+	}
+	if err := node.Decode(&doc.meta); err != nil {
+		return doc, err
+	}
+	doc.meta = retainTimestampText(doc.meta, &node).(map[string]any)
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
 		return doc, fmt.Errorf("multiple YAML documents")
@@ -375,4 +383,33 @@ func prose(body string) string {
 		lines[i] = out.String()
 	}
 	return strings.Join(lines, "\n")
+}
+
+// YAML timestamp decoding otherwise loses whether the input had an offset (or
+// even a time of day). Preserve original scalar text for explicit RFC3339 checks.
+func retainTimestampText(value any, node *yaml.Node) any {
+	switch node.Kind {
+	case yaml.DocumentNode:
+		return retainTimestampText(value, node.Content[0])
+	case yaml.AliasNode:
+		return retainTimestampText(value, node.Alias)
+	case yaml.ScalarNode:
+		if node.Tag == "!!timestamp" {
+			return node.Value
+		}
+	case yaml.MappingNode:
+		if m, ok := value.(map[string]any); ok {
+			for i := 0; i+1 < len(node.Content); i += 2 {
+				key := node.Content[i].Value
+				m[key] = retainTimestampText(m[key], node.Content[i+1])
+			}
+		}
+	case yaml.SequenceNode:
+		if items, ok := value.([]any); ok {
+			for i, item := range node.Content {
+				items[i] = retainTimestampText(items[i], item)
+			}
+		}
+	}
+	return value
 }

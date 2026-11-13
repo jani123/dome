@@ -155,3 +155,15 @@ func TestNestedDiscoverabilityAndSourceDirectories(t *testing.T) {
 	files["knowledge/index.md"] = "# Knowledge\n"
 	require.NotEmpty(t, validate(t, files, true))
 }
+
+func TestTimestampOffsetsAreNotInventedByYAML(t *testing.T) {
+	for _, value := range []string{"2026-11-13", "2026-11-13T07:00:00"} {
+		files := fixture()
+		files["knowledge/source.md"] = strings.Replace(concept, "'2026-11-13T07:00:00Z'", value, 1)
+		require.Empty(t, validate(t, files, false))
+		require.NotEmpty(t, validate(t, files, true))
+	}
+	files := fixture()
+	files["knowledge/source.md"] = strings.Replace(concept, "'2026-11-13T07:00:00Z'", "2026-11-13T07:00:00Z", 1)
+	require.Empty(t, validate(t, files, true))
+}
