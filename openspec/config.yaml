@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  Follow AGENTS.md. Dome is a Go library compiled into consumer-owned agents.
+  Repository tooling must remain outside the compiled agent's runtime.
+  Structured OpenSpec artifacts are committed; ad hoc plans and handovers stay local.
+  Project knowledge uses GoogleCloudPlatform/open-knowledge-format, OKF v0.2.
+  Specs define behavior; OKF preserves rationale and source-linked facts; README/docs explain usage.
+  Imported existing behavior must be distinguished from proposed changes and unverified claims.
+
+rules:
+  proposal:
+    - State scope and exclusions; link existing relevant capabilities before adding new ones.
+  specs:
+    - Use observable requirements and scenarios; preserve reconciliation and recovery invariants.
+    - Distinguish current capabilities from proposals and known support limitations.
+  design:
+    - Explain source-of-truth boundaries and compatibility with existing documentation and tooling.
+  tasks:
+    - Include evidence-based migration coverage and validation; do not fabricate historical tasks or approvals.
+    - Keep external acceptance checks open until actually exercised.
+
+operations:
+  apply:
+    guidance:
+      - Run checks required by AGENTS.md for the change; preserve unrelated work.
+      - Update affected specs, knowledge, and user documentation together without duplicating their roles.
+  archive:
+    guidance:
+      - Archive only verified completed scope; keep unfinished work active.
+      - Never invent past implementation dates, review approvals, or successful checks.

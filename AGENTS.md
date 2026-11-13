@@ -5,9 +5,14 @@ public API examples, supported behavior, and development commands.
 
 ## Documentation and working notes
 
-- Never commit plans, handovers, task checklists, or agent progress/session notes,
-  regardless of their filename or location. Keep temporary working documents in
-  ignored local storage such as `.build/notes/`.
+- Never commit ad hoc plans, handovers, task checklists, or agent progress/session
+  notes, regardless of their filename or location. Keep temporary working
+  documents in ignored local storage such as `.build/notes/`.
+- Structured OpenSpec artifacts under `openspec/` are the explicit exception:
+  capability specs and change proposals, designs, tasks, and archives belong in
+  version control. This does not permit standalone plan or handover documents.
+- Curated OKF project knowledge is maintained documentation: preserve lasting
+  facts, rationale, and source references, not chat transcripts or session notes.
 - Move lasting decisions, supported behavior, setup instructions, and operational
   guidance into the relevant README or documentation. Integrate that material for
   its readers; do not preserve a working plan by renaming it as documentation.
