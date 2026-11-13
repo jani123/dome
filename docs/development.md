@@ -35,7 +35,7 @@ scripts/openspec.sh list
 ```
 
 The devcontainer post-create `task dev:setup` installs the pinned CLI automatically.
-The installer supports Linux amd64/arm64; it uses the version in
+The installer targets glibc-based Linux amd64/arm64 (the devcontainer and CI); it uses the version in
 .openspec-version and verifies the official release SHA-256 manifest. It never
 silently substitutes another package, runtime, or download source. The wrapper
 checks the installed version and disables telemetry and update checks. It isolates

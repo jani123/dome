@@ -33,7 +33,8 @@
 - [x] 5.2 Add Make/Task validation commands and dedicated CI checks for the bundle and strict OpenSpec validation.
 - [x] 5.3 Verify that malformed disposable fixtures fail checks and that ordinary handovers/scratch notes remain ignored while structured artifacts are tracked.
 - [ ] 5.4 Exercise clean development setup and a fresh agent session: recover a prior decision, locate its source/spec, and prepare a small correctly scoped change without reading historical handovers.
-- [ ] 5.5 Run the checks required for the final implementation, reconcile evidence/limitations, and archive this change only after its implemented scope is verified.
+- [x] 5.5 Run the checks required for the final implementation and reconcile evidence/limitations.
+- [ ] 5.6 Archive this change only after the remaining fresh-agent acceptance is verified.
 
 ## Verification boundary
 
