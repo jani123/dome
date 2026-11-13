@@ -2,7 +2,9 @@
 
 This follows Stoca's Devbox and Docker Compose setup, with Go tooling only.
 Devbox supplies Go 1.25, gopls, Delve, gofumpt, Task, Git and ripgrep.
-The image installs Codex 0.162.0 with Node/npm, matching Stoca.
+The image installs Codex 0.162.0 with Node/npm, matching Stoca, and
+[Hunk](https://github.com/modem-dev/hunk) 0.25.0 using its checksum-verified
+standalone installer. Run `hunk diff` in the checkout to review changes.
 Python and application-specific servers are not installed.
 
 The Git integration suite builds its own small HTTP/SSH server image from
