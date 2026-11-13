@@ -87,6 +87,36 @@ See [compatibility/support policy](docs/content/releases.md),
 [customer licensing](docs/content/licensing.md), and
 [dependency review](docs/DEPENDENCY_REVIEW.md).
 
+### GitHub Pages setup
+
+In [repository Pages settings](https://github.com/jani123/dome/settings/pages),
+select **Build and deployment → Source → GitHub Actions**. Repository Actions
+policy must permit the official actions pinned in `.github/workflows/docs.yml`.
+Keep default token permissions read-only; the workflow requests the permissions
+its build and deployment jobs need. The `github-pages` environment must allow
+deployments from `main`: the workflow checks out `main` even when triggered by a
+published release. Approve deployments if environment reviewers are configured.
+
+After merging the workflow, open the repository's **Actions → Documentation**
+workflow and use **Run workflow** on `main` when a manual deployment is needed.
+Check the build/deploy logs, then verify `https://jani123.github.io/dome/`, its
+guide links, assets, and version navigation. A 404 before the first successful
+deployment does not imply the Pages setting is disabled. For broken assets after
+deployment, check the `/dome/` base path and uploaded output directory. No custom
+domain or personal access token is required.
+
+### Release acceptance
+
+Before publishing a release, verify native bootstrap/build/execution on every
+advertised architecture, public resolution of the exact tagged Go module without
+local replacements, and pkg.go.dev license recognition and examples. Test the
+published quickstart, including plan, requested apply, idempotency, configuration
+updates, pruning, and recovery. Verify Codex discovers the generated skill and can
+author a resource and playbook using the pinned API; static front-matter checks
+alone do not establish that behavior. Verify deployed guide snapshots and stable
+navigation after publication. Record verification evidence with the release's
+notes or CI results rather than committing agent progress documents.
+
 ## Build and try the example
 
 Use Linux and Go 1.26 or newer. `go.mod` pins dependency versions; Go 1.25 with automatic toolchain downloads enabled can bootstrap the required toolchain. Docker is needed only for container tests.

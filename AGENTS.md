@@ -3,6 +3,17 @@
 These rules apply throughout the repository. Use `README.md` for package layout,
 public API examples, supported behavior, and development commands.
 
+## Documentation and working notes
+
+- Never commit plans, handovers, task checklists, or agent progress/session notes,
+  regardless of their filename or location. Keep temporary working documents in
+  ignored local storage such as `.build/notes/`.
+- Move lasting decisions, supported behavior, setup instructions, and operational
+  guidance into the relevant README or documentation. Integrate that material for
+  its readers; do not preserve a working plan by renaming it as documentation.
+- Before committing, inspect staged files for working documents. Ignore patterns
+  are a convenience, not an exception to this rule.
+
 ## Architecture and configuration
 
 - Dome is a Go library (`github.com/jani123/dome`) that users compile into their

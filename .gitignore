@@ -10,3 +10,10 @@
 /docs/.hugo_build.lock
 /docs/resources/
 /docs/public/
+
+# Local working documents; lasting guidance belongs in maintained documentation.
+[Pp][Ll][Aa][Nn].md
+[Pp][Ll][Aa][Nn][_-]*.md
+*[_-][Pp][Ll][Aa][Nn].md
+*[_-][Pp][Ll][Aa][Nn][_-]*.md
+*[Hh][Aa][Nn][Dd][Oo][Vv][Ee][Rr]*.md
