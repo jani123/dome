@@ -24,6 +24,7 @@ check-knowledge:
 	go run scripts/check-knowledge.go -policy
 
 check-specs:
+	go run scripts/check-maintainer-skills.go
 	scripts/openspec.sh validate --all --strict
 
 check-artifacts: check-knowledge check-specs

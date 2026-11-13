@@ -164,8 +164,9 @@ func Validate(repo fs.FS, options Options) ([]Issue, error) {
 					}
 					if child, ok := docs[target]; ok && path.Base(target) != "index.md" {
 						// Index summaries are a search surface: prevent descriptions from drifting.
-						for _, line := range strings.Split(prose(doc.body), "\n") {
-							if strings.Contains(line, m[0]) && !strings.Contains(line, text(child.meta["description"])) {
+						rawLines := strings.Split(doc.body, "\n")
+						for i, line := range strings.Split(prose(doc.body), "\n") {
+							if strings.Contains(line, m[0]) && !strings.Contains(rawLines[i], text(child.meta["description"])) {
 								add(file, "policy", "index summary differs from linked concept description")
 							}
 						}

@@ -167,3 +167,11 @@ func TestTimestampOffsetsAreNotInventedByYAML(t *testing.T) {
 	files["knowledge/source.md"] = strings.Replace(concept, "'2026-11-13T07:00:00Z'", "2026-11-13T07:00:00Z", 1)
 	require.Empty(t, validate(t, files, true))
 }
+
+func TestIndexSummariesPreserveInlineFormatting(t *testing.T) {
+	files := fixture()
+	for name, body := range files {
+		files[name] = strings.ReplaceAll(body, "Customers can rebuild agents.", "Customers can rebuild `agents`.")
+	}
+	require.Empty(t, validate(t, files, true))
+}
