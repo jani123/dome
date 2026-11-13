@@ -41,6 +41,24 @@ Read the [guides in source](docs/content/_index.md),
 [generated API reference](https://pkg.go.dev/github.com/jani123/dome). The hosted
 site and tagged API availability still require first deployment/release verification.
 
+## Maintainer knowledge and feature workflow
+
+Start with the [knowledge index](knowledge/index.md) for rationale and constraints,
+[OpenSpec capability specs](openspec/specs/) for supported behavior, and
+[active changes](openspec/changes/) for scoped implementation work. The
+[maintainer workflow](docs/development.md) documents source-of-truth boundaries,
+OKF authoring, setup, validation, and retrospective coverage of existing work.
+
+```sh
+make tools-openspec
+make setup-specs
+make check-artifacts
+```
+
+These tools belong to repository development, not the compiled agent runtime.
+Structured OpenSpec artifacts and curated knowledge are committed; ad hoc plans,
+handovers, and session notes remain local.
+
 ## Onboarding development and releases
 
 ```sh
@@ -62,7 +80,7 @@ smokes and docs checks. `scripts/install-hugo.sh` downloads the version in
 Docs use a minimal repository-owned Hugo layout. In GitHub branch/ruleset settings,
 require `check`, `test-race`, `test-e2e`, `test-integration`,
 `Starter (ubuntu-24.04)`, `Starter (ubuntu-24.04-arm)`, and
-`Documentation and workflow checks` before merging into `main`. Verify runner
+`Documentation and workflow checks`, and `Knowledge and specifications` before merging into `main`. Verify runner
 availability and those check names after the first actual Actions run.
 Pages is configured with Actions;
 the docs workflow publishes `/next/` and rebuilds published version snapshots from

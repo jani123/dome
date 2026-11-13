@@ -16,6 +16,13 @@ public API examples, supported behavior, and development commands.
 - Move lasting decisions, supported behavior, setup instructions, and operational
   guidance into the relevant README or documentation. Integrate that material for
   its readers; do not preserve a working plan by renaming it as documentation.
+- Before changing behavior, read relevant entries from `knowledge/index.md` and
+  `openspec/specs/`, then follow their code/test sources. Use OpenSpec changes for
+  scoped requirements, design, tasks, verification, and completed archives.
+- Update affected specs, curated knowledge, and user documentation together.
+  Preserve source/verification provenance; do not turn historical test results or
+  local builds into current or public acceptance claims. Run `make check-artifacts`
+  when these maintained artifacts change; setup is documented in `docs/development.md`.
 - Before committing, inspect staged files for working documents. Ignore patterns
   are a convenience, not an exception to this rule.
 

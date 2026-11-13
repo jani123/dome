@@ -1,4 +1,4 @@
-.PHONY: build build-initializer docs test test-race test-e2e test-integration fmt check
+.PHONY: build build-initializer docs tools-openspec setup-specs check-knowledge check-specs check-artifacts test test-race test-e2e test-integration fmt check
 
 VERSION ?= dev
 
@@ -13,6 +13,20 @@ build-initializer:
 docs:
 	scripts/install-hugo.sh
 	scripts/build-docs.sh next
+
+tools-openspec:
+	scripts/install-openspec.sh
+
+setup-specs:
+	scripts/setup-specs.sh
+
+check-knowledge:
+	go run scripts/check-knowledge.go -policy
+
+check-specs:
+	scripts/openspec.sh validate --all --strict
+
+check-artifacts: check-knowledge check-specs
 
 test:
 	go test ./...

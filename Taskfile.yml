@@ -26,6 +26,7 @@ tasks:
     cmds:
       - task: prepare
       - 'if test -f go.mod; then go mod download; fi'
+      - task: tools:openspec
 
   module:
     internal: true
@@ -48,6 +49,31 @@ tasks:
     desc: Build and check the pinned Hugo development guides
     cmds:
       - make docs
+
+  tools:openspec:
+    desc: Install the pinned checksum-verified native OpenSpec CLI
+    cmds:
+      - make tools-openspec
+
+  specs:setup:
+    desc: Refresh the repository's pinned Codex OpenSpec workflows
+    cmds:
+      - make setup-specs
+
+  check:knowledge:
+    desc: Validate Google OKF format and Dome authoring policy
+    cmds:
+      - make check-knowledge
+
+  check:specs:
+    desc: Strictly validate active OpenSpec changes and capability specs
+    cmds:
+      - make check-specs
+
+  check:artifacts:
+    desc: Validate maintained knowledge and specification artifacts
+    cmds:
+      - make check-artifacts
 
   test:
     desc: Run Go tests

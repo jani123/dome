@@ -99,3 +99,12 @@ Host image builds and host Devbox shells use the host network.
 
 Devbox package resolution creates `devbox.lock`; commit it after the first
 successful setup to share the resolved tool versions.
+
+## Maintainer knowledge and specifications
+
+`task dev:setup` also installs the pinned native OpenSpec CLI with checksum
+verification. The Devbox shell exposes `.build/tools` and disables OpenSpec
+telemetry/update checks. Versioned maintainer skills are already in the checkout;
+refresh intentionally with `make setup-specs` after a tool upgrade. Google OKF
+knowledge is plain repository Markdown/YAML and needs no cloud credentials or
+third-party memory service. See [the maintainer workflow](../docs/development.md).

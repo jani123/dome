@@ -1,0 +1,143 @@
+# Maintainer knowledge and specifications
+
+Dome uses Google Open Knowledge Format (OKF) v0.2 for curated project memory and
+OpenSpec 2.0 for capability requirements and structured implementation changes.
+These are maintainer tools and documents; they are not dependencies of deployed
+Dome agents or automatically installed into generated consumer projects.
+
+## Find the right source
+
+| Question | Read |
+| --- | --- |
+| What rules govern this change? | [AGENTS.md](../AGENTS.md) |
+| Why was a decision made, and what constraints matter? | [Knowledge index](../knowledge/index.md) |
+| What behavior is supported? | [Capability specifications](../openspec/specs/) and their implementation/test evidence |
+| What work is proposed or still unfinished? | [Active OpenSpec changes](../openspec/changes/) |
+| How do I build, use, or deploy Dome? | [README](../README.md) and public guides |
+
+Read the relevant index and concepts before editing; follow their sources. Use
+`rg` to search knowledge and specs rather than loading every document. User
+instructions and repository rules remain authoritative. If code, specs, and docs
+disagree, inspect the evidence and record the discrepancy instead of certifying a
+guess. Preserve secrets outside tracked artifacts.
+
+## Tooling and commands
+
+```sh
+make tools-openspec                    # official pinned native binary + checksum
+make setup-specs                       # refresh seven maintainer Codex workflows
+export PATH="$PWD/.build/tools:$PATH"   # for direct CLI/skill invocation outside Devbox
+make check-knowledge                   # format plus Dome authoring policy
+make check-specs                       # strict OpenSpec checks
+make check-artifacts                   # both document checks
+scripts/openspec.sh list --specs
+scripts/openspec.sh list
+```
+
+The devcontainer post-create `task dev:setup` installs the pinned CLI automatically.
+The installer supports Linux amd64/arm64; it uses the version in
+.openspec-version and verifies the official release SHA-256 manifest. It never
+silently substitutes another package, runtime, or download source. The wrapper
+checks the installed version and disables telemetry and update checks. It isolates
+OpenSpec configuration under `.build/openspec-config/`, preserving personal tool
+profiles. The developer shell sets the tools PATH and OpenSpec telemetry settings.
+
+`setup-specs` selects explore, propose, apply, update, sync, archive, and verify.
+Generated maintainer skills under `.agents/skills/` are versioned together with
+the pin; refresh them after an intentional upgrade and inspect the diff. The
+upstream MIT license is preserved in `.agents/OPENSPEC_LICENSE`. Do not overwrite
+the consumer Dome skill template or replace repository rules with tool defaults.
+
+## Change lifecycle
+
+1. Read relevant knowledge and capability specs, then inspect their sources.
+2. Explore the requested change; create a proposal naming existing/new capabilities.
+3. Write observable requirement deltas, design, implementation tasks, and checks.
+4. Implement the scoped tasks; update affected knowledge, docs, and specs together.
+5. Run the required tests and artifact validation. Use the verify workflow to
+   compare code, scenarios, and evidence; unchecked acceptance remains active.
+6. Sync deltas into the baseline and archive only completed scope. Retain external
+   verification as active work instead of treating local builds as publication.
+
+Invoke generated workflows through Codex by name, such as `$openspec-propose`
+or `$openspec-verify-change`. The wrapper can inspect artifact instructions:
+
+```sh
+scripts/openspec.sh instructions apply --change <change-name> --json
+scripts/openspec.sh validate --all --strict
+```
+
+Committed OpenSpec proposals/designs/tasks/archives are the explicit exception
+to the no-ad-hoc-plans rule. Ordinary working notes and handovers remain in ignored
+storage; do not import them as renamed documentation or memory.
+
+## OKF authoring policy
+
+The format is the [Google OKF v0.2 specification](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/ad30107c31c06aec8a7d5636e0d1058118604e6f/SPEC.md).
+No BigQuery/Gemini reference agent, third-party `okf` CLI, embedding model, cloud
+credentials, or hosted memory service is needed to read or maintain this bundle.
+
+Concepts live under `knowledge/architecture`, `knowledge/decisions`, and
+`knowledge/operations`. They use Markdown plus YAML with a non-empty `type`.
+Reserved `index.md` files provide progressive discovery; only the bundle-root
+index can carry `okf_version: "0.2"` front matter. Git supplies change history;
+there is no session log in the bundle.
+
+The validator reports `format` and `policy` findings separately:
+
+- `go run scripts/check-knowledge.go` checks upstream structural conformance.
+  Unknown concept types/extensions and missing optional metadata remain valid.
+- `go run scripts/check-knowledge.go -policy` adds Dome conventions: title and
+  description, generation actor/time, concrete source references, indexed
+  discoverability, matching index descriptions, unique source IDs, claim
+  footnotes, valid verification timestamps, and local reference paths.
+
+The project checks local Markdown inline-link destinations and source paths; it
+does not fetch external URLs, prove semantic claims, check remote freshness, or
+validate fragment anchors and reference-style Markdown links. Keep navigational
+links in ordinary inline Markdown form so local checks cover them. Bundle-root
+paths begin with `/`; paths outside the bundle remain repository-relative after
+resolution from the concept. Knowledge directories require an index; source directories outside the bundle
+may be referenced without an index.
+
+Use `generated: {by: producer/version, at: RFC3339}` for actual content authorship.
+`sources` entries link concrete code, tests, specs, or documentation. Stable source
+IDs support `[^id]` claim footnotes. Actor conventions distinguish `human:<id>`,
+`process:<id>`, and `producer/version`. Do not invent a human verification event.
+A single `verified` mapping or a list is supported. If content changes after its
+verification, recheck or remove that event. Historical passing runs do not prove
+current code or external delivery. `stale_after`, if used, is an explicit-offset
+timestamp; expiry is a review signal, not a reason to claim the format is invalid.
+
+## Retrospective baseline and evidence coverage
+
+The initial baseline documents code inspected at
+`3e262920bbc20e41f843250f78a90c4935b9a036`. It is a retrospective import of
+existing behavior, not fictional proposals, approvals, or checklists from earlier
+development. It covers the initial library implementation, consumer onboarding,
+licensing, documentation/release tooling, and the decision to keep ad hoc plans
+local. The table locates all imported capability areas. Evidence links describe
+where behavior is implemented/tested; they do not assert a new passing test run.
+
+| Capability | Knowledge | Implementation and checks |
+| --- | --- | --- |
+| [agent-composition](../openspec/specs/agent-composition/spec.md) | [Rationale](../knowledge/architecture/library-composition.md) | [agent/agent.go](../agent/agent.go); [core/resource/resource.go](../core/resource/resource.go); [core/registry/registry.go](../core/registry/registry.go); [tests/integration/consumer_test.go](../tests/integration/consumer_test.go); [agent/example_test.go](../agent/example_test.go) |
+| [reconciliation](../openspec/specs/reconciliation/spec.md) | [Rationale](../knowledge/architecture/reconciliation-and-ownership.md) | [core/reconcile/reconcile.go](../core/reconcile/reconcile.go); [core/reconcile/reconcile_test.go](../core/reconcile/reconcile_test.go); [core/resource/resource.go](../core/resource/resource.go); [tests/e2e/e2e_test.go](../tests/e2e/e2e_test.go) |
+| [durable-state](../openspec/specs/durable-state/spec.md) | [Rationale](../knowledge/architecture/state-and-locking.md) | [core/state/state.go](../core/state/state.go); [core/state/sqlite_integration_test.go](../core/state/sqlite_integration_test.go); [core/dag/dag.go](../core/dag/dag.go); [docs/content/recovery.md](../docs/content/recovery.md) |
+| [playbook-execution](../openspec/specs/playbook-execution/spec.md) | [Rationale](../knowledge/architecture/dag-execution-and-recovery.md) | [core/playbook/playbook.go](../core/playbook/playbook.go); [core/dag/dag.go](../core/dag/dag.go); [core/dag/dag_test.go](../core/dag/dag_test.go); [core/playbook/playbook_test.go](../core/playbook/playbook_test.go) |
+| [resource-transitions](../openspec/specs/resource-transitions/spec.md) | [Rationale](../knowledge/architecture/transition-target-recovery.md) | [core/reconcile/reconcile.go](../core/reconcile/reconcile.go); [core/reconcile/reconcile_test.go](../core/reconcile/reconcile_test.go); [examples/basic-agent/main.go](../examples/basic-agent/main.go); [tests/e2e/e2e_test.go](../tests/e2e/e2e_test.go) |
+| [configuration-sources](../openspec/specs/configuration-sources/spec.md) | [Rationale](../knowledge/decisions/typed-config-and-secrets.md) | [config/config.go](../config/config.go); [config/git.go](../config/git.go); [config/config_test.go](../config/config_test.go); [config/git_test.go](../config/git_test.go); [config/sops_integration_test.go](../config/sops_integration_test.go); [tests/integration/git_test.go](../tests/integration/git_test.go) |
+| [resource-modules](../openspec/specs/resource-modules/spec.md) | [Rationale](../knowledge/architecture/file-and-systemd-boundaries.md) | [modules/file/file.go](../modules/file/file.go); [modules/file/filesystem_integration_test.go](../modules/file/filesystem_integration_test.go); [modules/systemd/systemd.go](../modules/systemd/systemd.go); [modules/systemd/systemd_test.go](../modules/systemd/systemd_test.go) |
+| [consumer-cli](../openspec/specs/consumer-cli/spec.md) | [Rationale](../knowledge/operations/consumer-operations.md) | [cli/cli.go](../cli/cli.go); [cli/cli_test.go](../cli/cli_test.go); [cli/timing_test.go](../cli/timing_test.go); [agent/agent.go](../agent/agent.go); [core/fault/fault.go](../core/fault/fault.go) |
+| [project-initialization](../openspec/specs/project-initialization/spec.md) | [Rationale](../knowledge/decisions/version-pinned-starter.md) | [cmd/dome/main.go](../cmd/dome/main.go); [internal/scaffold/scaffold.go](../internal/scaffold/scaffold.go); [internal/scaffold/publish.go](../internal/scaffold/publish.go); [internal/scaffold/publish_integration_test.go](../internal/scaffold/publish_integration_test.go); [tests/integration/scaffold_test.go](../tests/integration/scaffold_test.go) |
+| [consumer-authoring](../openspec/specs/consumer-authoring/spec.md) | [Rationale](../knowledge/decisions/ai-for-authoring-only.md) | [internal/scaffold/templates/_agents/skills/dome/SKILL.md.tmpl](../internal/scaffold/templates/_agents/skills/dome/SKILL.md.tmpl); [internal/scaffold/templates/AGENTS.md.tmpl](../internal/scaffold/templates/AGENTS.md.tmpl); [internal/scaffold/templates/README.md.tmpl](../internal/scaffold/templates/README.md.tmpl); [internal/scaffold/scaffold_test.go](../internal/scaffold/scaffold_test.go); [docs/content/coding-agent.md](../docs/content/coding-agent.md) |
+| [customer-source-access](../openspec/specs/customer-source-access/spec.md) | [Rationale](../knowledge/decisions/customer-independence.md) | [LICENSE](../LICENSE); [README.md](../README.md); [docs/content/licensing.md](../docs/content/licensing.md); [docs/DEPENDENCY_REVIEW.md](../docs/DEPENDENCY_REVIEW.md); [scripts/release.sh](../scripts/release.sh) |
+| [documentation-publishing](../openspec/specs/documentation-publishing/spec.md) | [Rationale](../knowledge/operations/versioned-documentation.md) | [docs/hugo.toml](../docs/hugo.toml); [docs/layouts/_default/baseof.html](../docs/layouts/_default/baseof.html); [scripts/install-hugo.sh](../scripts/install-hugo.sh); [scripts/build-docs.sh](../scripts/build-docs.sh); [scripts/build-site.sh](../scripts/build-site.sh); [.github/workflows/docs.yml](../.github/workflows/docs.yml) |
+| [release-distribution](../openspec/specs/release-distribution/spec.md) | [Rationale](../knowledge/operations/release-and-compatibility.md) | [docs/content/releases.md](../docs/content/releases.md); [.github/workflows/release.yml](../.github/workflows/release.yml); [.github/workflows/ci.yml](../.github/workflows/ci.yml); [scripts/release.sh](../scripts/release.sh); [scripts/smoke-release.sh](../scripts/smoke-release.sh) |
+| [development-environment](../openspec/specs/development-environment/spec.md) | [Rationale](../knowledge/operations/proxy-and-real-tests.md) | [.devcontainer/README.md](../.devcontainer/README.md); [.devcontainer/proxy/allowed-domains.txt](../.devcontainer/proxy/allowed-domains.txt); [.devcontainer/compose.yaml](../.devcontainer/compose.yaml); [tests/integration/gitserver/Dockerfile](../tests/integration/gitserver/Dockerfile); [internal/testutil/containers.go](../internal/testutil/containers.go); [Makefile](../Makefile); [AGENTS.md](../AGENTS.md) |
+
+New knowledge/spec workflow capabilities are introduced through their actual
+OpenSpec change, rather than misrepresented as pre-existing runtime features.
+Pending delivery verification remains a separate active change. Source-linked
+knowledge captures limitations such as mocked systemd coverage, unsupported Git
+authentication modes, and the distinction between cross-build and native tests.
