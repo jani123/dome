@@ -1,4 +1,4 @@
-// Command dome initializes version-matched consumer projects.
+// Command dome initializes version-matched consumer and resource-module projects.
 package main
 
 import (
@@ -33,8 +33,14 @@ func buildVersion() string {
 
 type publisher func(context.Context, string, map[string][]byte, scaffold.Runner) error
 
+type modulePublisher func(context.Context, string, map[string]scaffold.File, scaffold.Runner) error
+
 func command(v string, publish publisher, resolve scaffold.Runner) *cobra.Command {
-	root := &cobra.Command{Use: "dome", Short: "Initialize a Go infrastructure agent project", SilenceUsage: true, SilenceErrors: true}
+	return commandWithModule(v, publish, resolve, scaffold.PublishModule, scaffold.PrepareModule)
+}
+
+func commandWithModule(v string, publish publisher, resolve scaffold.Runner, modulePublish modulePublisher, modulePrepare scaffold.Runner) *cobra.Command {
+	root := &cobra.Command{Use: "dome", Short: "Initialize Go infrastructure agents and resource modules", SilenceUsage: true, SilenceErrors: true}
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return fault.Wrap(fault.Validation, err) })
 	var modulePath string
 	init := &cobra.Command{Use: "init <directory> --module <module-path>", Short: "Create a fresh version-pinned project (never applies resources)", Args: func(cmd *cobra.Command, args []string) error {
@@ -52,6 +58,25 @@ func command(v string, publish publisher, resolve scaffold.Runner) *cobra.Comman
 	}}
 	init.Flags().StringVar(&modulePath, "module", "", "Go module path for the consumer (required)")
 	// Render validates the required module before any publication.
+	var resourceName string
+	moduleCmd := &cobra.Command{Use: "module", Short: "Develop standalone resource modules"}
+	moduleInit := &cobra.Command{Use: "init --module <go-module-path> --name <name>", Short: "Initialize the current empty directory as a resource-module repository", Args: func(cmd *cobra.Command, args []string) error {
+		return fault.Wrap(fault.Validation, cobra.NoArgs(cmd, args))
+	}, RunE: func(cmd *cobra.Command, _ []string) error {
+		files, err := scaffold.RenderModule(modulePath, resourceName, v)
+		if err != nil {
+			return err
+		}
+		if err := modulePublish(cmd.Context(), ".", files, modulePrepare); err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(cmd.OutOrStdout(), "Created module repository. Run task dev:setup and task check; see README.md.")
+		return err
+	}}
+	moduleInit.Flags().StringVar(&modulePath, "module", "", "External Go module path (required)")
+	moduleInit.Flags().StringVar(&resourceName, "name", "", "Importable lowercase package and resource identity (required)")
+	moduleCmd.AddCommand(moduleInit)
+	root.AddCommand(moduleCmd)
 	root.AddCommand(init, &cobra.Command{Use: "version", Args: func(cmd *cobra.Command, args []string) error {
 		return fault.Wrap(fault.Validation, cobra.NoArgs(cmd, args))
 	}, RunE: func(cmd *cobra.Command, _ []string) error { _, err := fmt.Fprintln(cmd.OutOrStdout(), v); return err }})

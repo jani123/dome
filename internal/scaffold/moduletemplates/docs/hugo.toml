@@ -1,0 +1,5 @@
+baseURL = 'http://localhost/'
+title = '__NAME__ module'
+disableKinds = ['taxonomy', 'term', 'RSS', 'sitemap']
+[markup.goldmark.renderer]
+  unsafe = false

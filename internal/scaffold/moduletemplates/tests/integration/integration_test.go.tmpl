@@ -1,0 +1,24 @@
+//go:build integration
+
+package integration_test
+
+import (
+	"testing"
+	"time"
+
+	"example.com/__MODULE__/tests/testutil"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestIntegration(t *testing.T) { RegisterFailHandler(Fail); RunSpecs(t, "Module real boundary") }
+
+var _ = Describe("Debian backend", func() {
+	It("observes applies and restores deletion against real files", func(ctx SpecContext) {
+		c := testutil.Start(ctx, "probe")
+		code, out, err := testutil.Exec(ctx, c, "fixture")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(code).To(Equal(0), out)
+	}, NodeTimeout(5*time.Minute))
+})

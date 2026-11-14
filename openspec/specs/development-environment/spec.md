@@ -6,6 +6,11 @@ Retrospective specification of behavior inspected at `3e262920bbc20e41f843250f78
 This baseline documents existing implementation; it does not assert that these
 requirements were authored before the code or that external acceptance passed.
 
+Later Taskfile migration and docs-preview behavior are recorded in
+[use-taskfile-for-core-development](../../changes/use-taskfile-for-core-development/proposal.md)
+and [expose-core-docs-preview](../../changes/expose-core-docs-preview/proposal.md);
+those additions are not attributed to the historical import revision.
+
 ## Requirements
 
 ### Requirement: Explicit egress policy
@@ -21,7 +26,7 @@ Evidence: [.devcontainer/README.md](../../../.devcontainer/README.md).
 
 ### Requirement: Real external-boundary verification
 
-Required verification SHALL include unit/vet/format, race, real boundary integration, and compiled-agent container E2E through the documented Make targets.
+Required verification SHALL include unit/vet/format, race, real boundary integration, and compiled-agent container E2E through documented Taskfile tasks with no Make dependency.
 
 Evidence: [AGENTS.md](../../../AGENTS.md).
 
@@ -29,6 +34,11 @@ Evidence: [AGENTS.md](../../../AGENTS.md).
 
 - **WHEN** a test touches actual filesystem, SQLite, keys, processes, or network
 - **THEN** it is integration-tagged or part of the dedicated container suites
+
+#### Scenario: Core checks without Make
+
+- **WHEN** a contributor or CI invokes documented Taskfile commands with the supported tools installed
+- **THEN** build, docs, tooling and required test checks run without delegating to Make
 
 ### Requirement: Owned Git transport fixture
 
@@ -41,6 +51,36 @@ Evidence: [tests/integration/git_test.go](../../../tests/integration/git_test.go
 - **WHEN** Git integration runs
 - **THEN** it exercises both real transports and authentication/known-host rejection without silently skipping or substituting a fake server
 
+### Requirement: Discoverable local documentation preview
+
+The devcontainer SHALL publish Hugo container port 1313 on a dynamically assigned host-loopback port. `task docs:serve` SHALL serve guides and `task devcontainer:urls` SHALL report current workspace bindings without starting containers or listing unrelated containers. Discovery SHALL distinguish mappings from readiness and explain remote Docker access.
+
+#### Scenario: Discover the docs preview
+
+- **WHEN** a contributor starts the devcontainer Hugo server and requests workspace URLs on the host
+- **THEN** discovery reports the current mapped docs URL and guides are reachable there
+
+#### Scenario: Workspace is stopped
+
+- **WHEN** no matching workspace is running
+- **THEN** discovery reports that state with startup guidance and does not start containers
+
+
+#### Scenario: Concurrent workspaces
+
+- **WHEN** two workspaces serve guides concurrently
+- **THEN** each reports its own distinct dynamically assigned localhost URL
+
+#### Scenario: Recreated workspace
+
+- **WHEN** a workspace is recreated and URL discovery is run again
+- **THEN** discovery reports current bindings without cached stale addresses
+
+#### Scenario: Unrelated containers
+
+- **WHEN** unrelated containers publish ports on the same Docker daemon
+- **THEN** discovery excludes their bindings from the workspace results
+
 ## Evidence and limitations
 
 - [.devcontainer/README.md](../../../.devcontainer/README.md)
@@ -48,7 +88,7 @@ Evidence: [tests/integration/git_test.go](../../../tests/integration/git_test.go
 - [.devcontainer/compose.yaml](../../../.devcontainer/compose.yaml)
 - [tests/integration/gitserver/Dockerfile](../../../tests/integration/gitserver/Dockerfile)
 - [internal/testutil/containers.go](../../../internal/testutil/containers.go)
-- [Makefile](../../../Makefile)
+- [Taskfile.yml](../../../Taskfile.yml)
 - [AGENTS.md](../../../AGENTS.md)
 
 A privileged workspace is not a hardened isolation boundary. Live systemd coverage and external forge credentials are not required by the ordinary Git container fixture.

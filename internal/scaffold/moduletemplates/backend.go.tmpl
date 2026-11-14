@@ -1,0 +1,14 @@
+package __NAME__
+
+import (
+	"context"
+
+	"github.com/jani123/dome/core/resource"
+)
+
+// Backend isolates real host operations. Implement truthful Observe and safely
+// repeatable Apply, including deletion. Never put secret data in snapshots.
+type Backend interface {
+	Observe(context.Context, string) (resource.Snapshot, error)
+	Apply(context.Context, string, resource.Action, resource.Snapshot) error
+}

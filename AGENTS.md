@@ -21,7 +21,7 @@ public API examples, supported behavior, and development commands.
   scoped requirements, design, tasks, verification, and completed archives.
 - Update affected specs, curated knowledge, and user documentation together.
   Preserve source/verification provenance; do not turn historical test results or
-  local builds into current or public acceptance claims. Run `make check-artifacts`
+  local builds into current or public acceptance claims. Run `task check:artifacts`
   when these maintained artifacts change; setup is documented in `docs/development.md`.
 - Before committing, inspect staged files for working documents. Ignore patterns
   are a convenience, not an exception to this rule.
@@ -90,10 +90,10 @@ public API examples, supported behavior, and development commands.
 Run the checks relevant to the change. Changes affecting shared runtime behavior
 or completion of a substantial feature require the full suite:
 
-- `make check`: formatting, vet, and unit tests.
-- `make test-race`: unit tests with the race detector.
-- `make test-e2e`: the compiled agent in Linux containers.
-- `make test-integration`: real boundary tests and Git HTTP/SSH integration.
+- `task check`: formatting, vet, and unit tests.
+- `task test:race`: unit tests with the race detector.
+- `task test:e2e`: the compiled agent in Linux containers.
+- `task test:integration`: real boundary tests and Git HTTP/SSH integration.
 
 Report what changed, what was verified, and any failing or skipped checks or
 remaining limitations. Keep implementation details and commands in the README

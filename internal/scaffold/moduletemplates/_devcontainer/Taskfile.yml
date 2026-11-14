@@ -1,0 +1,61 @@
+version: "3"
+
+vars:
+  DEVCONTAINER:
+    sh: command -v devcontainer || printf '%s\n' "$HOME/.devcontainers/bin/devcontainer"
+
+env:
+  # Older Compose Bake cannot forward host-network build entitlements.
+  COMPOSE_BAKE: "false"
+
+tasks:
+  up:
+    desc: Create or start the project Dev Container
+    preconditions:
+      - sh: test -x "{{.DEVCONTAINER}}"
+        msg: Install the Dev Container CLI and make devcontainer available on PATH.
+    cmds:
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" up --workspace-folder "{{.ROOT_DIR}}"
+
+  urls:
+    desc: Show current workspace port mappings without starting containers
+    cmds:
+      - bash "{{.ROOT_DIR}}/.devcontainer/urls.sh" "{{.ROOT_DIR}}"
+
+  shell:
+    desc: Open a Devbox shell in the project Dev Container
+    interactive: true
+    deps: [up]
+    cmds:
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" devbox shell
+
+  exec:
+    desc: Run a command in the container's Devbox environment
+    interactive: true
+    deps: [up]
+    cmds:
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" devbox run -- {{.CLI_ARGS}}
+
+  codex:
+    desc: Start Codex in the project Dev Container
+    interactive: true
+    deps: [up]
+    cmds:
+      - env -u DISPLAY -u WAYLAND_DISPLAY env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" devbox run -- /usr/bin/env -u DISPLAY -u WAYLAND_DISPLAY env -u LD_LIBRARY_PATH codex --no-daemon --dangerously-bypass-approvals-and-sandbox {{.CLI_ARGS}}
+
+  rebuild:
+    desc: Rebuild and recreate the container after image or proxy policy changes
+    cmds:
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" build --workspace-folder "{{.ROOT_DIR}}"
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" up --workspace-folder "{{.ROOT_DIR}}" --remove-existing-container
+
+  check:
+    desc: Verify the container toolchain
+    deps: [up]
+    cmds:
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" devbox run -- task doctor
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" codex --version
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" hunk --version
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" docker info
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" docker buildx version
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" docker compose version

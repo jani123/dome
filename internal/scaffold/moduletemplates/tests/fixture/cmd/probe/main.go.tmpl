@@ -1,0 +1,53 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	m "example.com/__MODULE__"
+	"example.com/__MODULE__/tests/fixture"
+
+	"github.com/jani123/dome/core/resource"
+)
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	ctx := context.Background()
+	b := fixture.Backend{Root: "/data"}
+	r := &m.Resource{Name: "probe", Target: resource.Snapshot{Exists: true, Value: "fixture"}, Backend: b}
+	if err := r.Validate(); err != nil {
+		return err
+	}
+	if err := r.Apply(ctx, resource.Create); err != nil {
+		return err
+	}
+	got, err := r.Observe(ctx)
+	if err != nil {
+		return err
+	}
+	if got != r.Desired() {
+		return fmt.Errorf("observed mismatch")
+	}
+	handle, err := (m.Module{Backend: b}).Restore(r.ID())
+	if err != nil {
+		return err
+	}
+	if err := handle.Apply(ctx, resource.Delete); err != nil {
+		return err
+	}
+	got, err = handle.Observe(ctx)
+	if err != nil {
+		return err
+	}
+	if got.Exists {
+		return fmt.Errorf("prune failed")
+	}
+	return nil
+}

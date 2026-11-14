@@ -1,0 +1,24 @@
+package __NAME__
+
+import (
+	"github.com/jani123/dome/core/fault"
+	"github.com/jani123/dome/core/resource"
+)
+
+// Module is registered explicitly with agent.WithModules. It restores deletion
+// handles using identity only, without old secret configuration.
+type Module struct{ Backend Backend }
+
+func (Module) Name() string { return "__NAME__" }
+func (m Module) Restore(id resource.ID) (resource.Resource, error) {
+	if id.Module != "__NAME__" {
+		return nil, fault.New(fault.Validation, "wrong module identity")
+	}
+	r := &Resource{Name: id.Name, Backend: m.Backend}
+	if err := r.Validate(); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+var _ resource.Module = Module{}

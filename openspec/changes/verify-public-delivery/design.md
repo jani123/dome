@@ -22,14 +22,12 @@ normal skill and template versions. Check plan without resource mutation, explic
 apply, no-op repeat, content updates, unrelated-file preservation, invalid-config
 failure, pruning, and recovery. Verify both initial RC and stable selection rules.
 
-Use a fresh maintainer session without handover files to retrieve a licensing or
-recovery decision from the knowledge index, follow its sources, locate its spec,
-and draft a small appropriately scoped change. Use a generated consumer project
+Fresh maintainer-session acceptance is owned by `adopt-project-knowledge-and-specs` task 5.4; reference its evidence rather than duplicating that check. Use a generated consumer project
 for a separate live Codex discovery/authoring/build/plan/requested-apply exercise.
 Do not confuse maintainer OpenSpec skills with the consumer Dome skill.
 
 Verify repository Actions policy, exact required checks, native runner availability,
 and github-pages environment rules with appropriate credentials. Confirm public
-module and pkg.go.dev indexing, deployed site/guide version paths, and license
-recognition after the approved source/tag is public. Never move an immutable tag
+module resolution, selected-version local `go doc` output/examples, deployed
+site/guide version paths, and source license/notices after the approved source/tag is public. Never move an immutable tag
 or silently mark an unavailable environment successful.

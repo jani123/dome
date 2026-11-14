@@ -74,6 +74,42 @@ Generated repositories SHALL use `Taskfile.yml` as their sole task runner, with 
 - **WHEN** a generated GitHub check job starts
 - **THEN** it installs the pinned Task version and invokes the same task commands documented for local development
 
+### Requirement: Runnable container test scaffold
+
+Generated repositories SHALL include Ginkgo/Gomega and Testcontainers integration/E2E suites, a customizable project-owned Debian fixture, and a compiled test consumer using the generated module. A test-only real adapter SHALL exercise container effects without replacing the unfinished production adapter. Requested suites SHALL fail if Docker is unavailable and clean up their owned resources.
+
+#### Scenario: Verify observable module behavior
+- **WHEN** an author runs `task test:integration` and `task test:e2e` with Docker available
+- **THEN** tagged tests verify real container effects and the compiled consumer's plan, apply, idempotency, pruning, and preservation of unrelated resources
+
+#### Scenario: Docker is unavailable
+- **WHEN** an author requests a container suite without a usable Docker daemon
+- **THEN** it fails with actionable diagnostics rather than silently skipping tests
+
+### Requirement: Portable devcontainer development
+
+Generated repositories SHALL include a project-adapted Devbox devcontainer with Docker-in-Docker, allowlisted proxy networking, isolated caches, setup instructions, and Task commands for lifecycle and toolchain checks. It SHALL support running generated integration/E2E suites inside the development environment without requiring that environment for ordinary host development. Generated proxies SHALL use a module-specific identity.
+
+#### Scenario: Open the generated development environment
+- **WHEN** an author starts the generated devcontainer with documented prerequisites
+- **THEN** post-create setup prepares the module toolchain and OpenSpec tooling and both container suites can run through the root Taskfile
+
+#### Scenario: Customize a module's dependencies
+- **WHEN** an author needs an additional package endpoint or Debian test dependency
+- **THEN** the generated documentation identifies the proxy allowlist and test fixture files to change and the rebuild and verification tasks to run
+
+### Requirement: Hugo preview and dynamic service discovery
+
+Generated repositories SHALL provide pinned Hugo guide build/serve tasks and publish the devcontainer docs server on a dynamically assigned loopback host port. `task devcontainer:urls` SHALL report current project service bindings with correct addresses and known HTTP URLs, without starting services or reporting unrelated/internal services. Documentation SHALL distinguish published bindings from running servers.
+
+#### Scenario: Preview guides alongside another workspace
+- **WHEN** two generated devcontainers run their Hugo servers and the author invokes `task devcontainer:urls` for each
+- **THEN** each reports its own distinct assigned host port and its advertised docs URL serves its guides and assets
+
+#### Scenario: Discover stopped or recreated services
+- **WHEN** an author requests addresses after the environment is stopped or recreated
+- **THEN** discovery reports the stopped state or current bindings without stale addresses or starting containers
+
 ### Requirement: Local API reference
 
 Generated documentation and authoring skills SHALL direct users to local `go doc` for the selected module and Dome dependency, with package comments and examples as API documentation sources. Workflows SHALL NOT explicitly request pkg.go.dev indexing or depend on its availability. Documentation SHALL NOT claim public module indexing is prevented.
@@ -88,7 +124,7 @@ Generated documentation and authoring skills SHALL direct users to local `go doc
 
 ### Requirement: Check-gated library releases
 
-Generated GitHub workflows SHALL run code, race, artifact, and workflow checks on pull requests and main-branch pushes. Supported immutable version tags SHALL run the same gates before preparing a draft source-library release. Actions SHALL be pinned to immutable commits and write permission limited to the draft job. Documentation SHALL distinguish tagged Go module availability from GitHub Release publication.
+Generated GitHub workflows SHALL run code, race, container integration/E2E, artifact, and workflow checks on pull requests and main-branch pushes. Supported immutable version tags SHALL run the same gates before preparing a draft source-library release. Actions SHALL be pinned to immutable commits and write permission limited to the draft job. Documentation SHALL distinguish tagged Go module availability from GitHub Release publication.
 
 #### Scenario: A release check fails
 - **WHEN** a tag-triggered required check fails

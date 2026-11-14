@@ -1,0 +1,26 @@
+package knowledge_test
+
+import (
+	"testing"
+	"testing/fstest"
+
+	"example.com/__MODULE__/internal/knowledge"
+	"github.com/stretchr/testify/require"
+)
+
+func TestWorkflowGeneratorDrift(t *testing.T) {
+	files := memory(map[string]string{".openspec-version": "2.0.0\n"})
+	for _, name := range []string{"openspec-explore", "openspec-propose", "openspec-apply-change", "openspec-update-change", "openspec-sync-specs", "openspec-archive-change", "openspec-verify-change"} {
+		files[".agents/skills/"+name+"/SKILL.md"] = &fstest.MapFile{Data: []byte("---\nname: " + name + "\ndescription: Maintainer workflow\nmetadata: {generatedBy: '2.0.0'}\n---\nBody\n")}
+	}
+	issues, err := knowledge.ValidateWorkflows(files)
+	require.NoError(t, err)
+	require.Empty(t, issues)
+	files[".openspec-version"] = &fstest.MapFile{Data: []byte("2.1.0\n")}
+	issues, err = knowledge.ValidateWorkflows(files)
+	require.NoError(t, err)
+	require.NotEmpty(t, issues)
+	delete(files, ".agents/skills/openspec-verify-change/SKILL.md")
+	_, err = knowledge.ValidateWorkflows(files)
+	require.Error(t, err)
+}

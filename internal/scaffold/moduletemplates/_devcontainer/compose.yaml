@@ -1,0 +1,97 @@
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
+        http_proxy: ${http_proxy:-}
+        https_proxy: ${https_proxy:-}
+        no_proxy: ${no_proxy:-}
+      entitlements:
+      - network.host
+    command: sleep infinity
+    init: true
+    volumes:
+    - ..:/workspaces/module
+    networks:
+    - private
+    dns:
+    - 127.0.0.1
+    environment:
+      HTTP_PROXY: http://proxy:3128
+      HTTPS_PROXY: http://proxy:3128
+      http_proxy: http://proxy:3128
+      https_proxy: http://proxy:3128
+      NO_PROXY: localhost,127.0.0.1,::1
+      no_proxy: localhost,127.0.0.1,::1
+    depends_on:
+      proxy:
+        condition: service_healthy
+  proxy:
+    build:
+      context: proxy
+      network: host
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
+        http_proxy: ${http_proxy:-}
+        https_proxy: ${https_proxy:-}
+        no_proxy: ${no_proxy:-}
+      entitlements:
+      - network.host
+    networks:
+    - private
+    - internet
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    tmpfs:
+    - /tmp
+    - /run
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - --fail
+      - --silent
+      - --proxy
+      - http://127.0.0.1:3128
+      - https://proxy.golang.org/
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  docs:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    user: 101:101
+    networks:
+    - private
+    - internet
+    ports:
+    - 127.0.0.1::1313
+    volumes:
+    - ./docs-proxy.conf:/etc/nginx/nginx.conf:ro
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    tmpfs:
+    - /tmp
+    - /var/cache/nginx
+    - /var/run
+    depends_on:
+    - workspace
+networks:
+  private:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.gateway_mode_ipv4: isolated
+  internet: null

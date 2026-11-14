@@ -1,0 +1,5 @@
+schema: spec-driven
+context: |
+  This is a standalone Dome resource-module library using public Go contracts.
+  Follow AGENTS.md; keep typed Go behavior separate from configuration values.
+  Specs own requirements; OKF owns source-linked rationale; docs own usage.

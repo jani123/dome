@@ -1,0 +1,79 @@
+package __NAME___test
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	m "example.com/__MODULE__"
+
+	"github.com/jani123/dome/core/resource"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+)
+
+type backend struct{ mock.Mock }
+
+func (b *backend) Observe(ctx context.Context, n string) (resource.Snapshot, error) {
+	a := b.Called(ctx, n)
+	return a.Get(0).(resource.Snapshot), a.Error(1)
+}
+
+func (b *backend) Apply(ctx context.Context, n string, a resource.Action, s resource.Snapshot) error {
+	return b.Called(ctx, n, a, s).Error(0)
+}
+
+func TestContracts(t *testing.T) {
+	ctx := context.Background()
+	b := &backend{}
+	target := resource.Snapshot{Exists: true, Value: "nonsecret-digest"}
+	r := &m.Resource{Name: "item", Target: target, Backend: b}
+	require.NoError(t, r.Validate())
+	require.Equal(t, target, r.Desired())
+	require.Equal(t, "__NAME__", r.ID().Module)
+	_, safe, err := r.Transition(resource.Snapshot{})
+	require.NoError(t, err)
+	require.True(t, safe)
+	b.On("Observe", ctx, "item").Return(target, nil).Once()
+	got, err := r.Observe(ctx)
+	require.NoError(t, err)
+	require.Equal(t, target, got)
+	for _, a := range []resource.Action{resource.Create, resource.Update, resource.Delete} {
+		b.On("Apply", ctx, "item", a, target).Return(nil).Once()
+		require.NoError(t, r.Apply(ctx, a))
+	}
+	require.NoError(t, r.Apply(ctx, resource.Noop))
+	require.Error(t, r.Apply(ctx, "invalid"))
+	restored, err := (m.Module{Backend: b}).Restore(r.ID())
+	require.NoError(t, err)
+	require.False(t, restored.Desired().Exists)
+	_, err = (m.Module{}).Restore(resource.ID{Module: "other", Name: "item"})
+	require.Error(t, err)
+	_, err = (m.Module{}).Restore(resource.ID{Module: "__NAME__", Name: "../escape"})
+	require.Error(t, err)
+	b.AssertExpectations(t)
+}
+
+func TestFailures(t *testing.T) {
+	ctx := context.Background()
+	r := &m.Resource{Name: "item"}
+	_, err := r.Observe(ctx)
+	require.Error(t, err)
+	require.Error(t, r.Apply(ctx, resource.Create))
+	b := &backend{}
+	r.Backend = b
+	failure := errors.New("boundary failure")
+	b.On("Observe", ctx, "item").Return(resource.Snapshot{}, failure)
+	_, err = r.Observe(ctx)
+	require.ErrorIs(t, err, failure)
+	b.On("Apply", ctx, "item", resource.Create, resource.Snapshot{}).Return(failure)
+	require.ErrorIs(t, r.Apply(ctx, resource.Create), failure)
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = r.Observe(cancelled)
+	require.ErrorIs(t, err, context.Canceled)
+	require.ErrorIs(t, r.Apply(cancelled, resource.Create), context.Canceled)
+	r.Name = "../escape"
+	require.Error(t, r.Validate())
+	b.AssertExpectations(t)
+}

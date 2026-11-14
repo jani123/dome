@@ -4,6 +4,10 @@ vars:
   DEVCONTAINER:
     sh: command -v devcontainer || printf '%s\n' "$HOME/.devcontainers/bin/devcontainer"
 
+env:
+  # Older Compose Bake cannot forward host-network build entitlements.
+  COMPOSE_BAKE: "false"
+
 tasks:
   up:
     desc: Create or start the project Dev Container
@@ -12,6 +16,11 @@ tasks:
         msg: Install the Dev Container CLI and make devcontainer available on PATH.
     cmds:
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" up --workspace-folder "{{.ROOT_DIR}}"
+
+  urls:
+    desc: Show current workspace port mappings without starting containers
+    cmds:
+      - bash "{{.ROOT_DIR}}/.devcontainer/urls.sh" "{{.ROOT_DIR}}"
 
   shell:
     desc: Open a Devbox shell in the project Dev Container

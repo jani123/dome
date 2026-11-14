@@ -1,0 +1,76 @@
+//go:build integration || e2e
+
+package testutil
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/moby/moby/client"
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+	tc "github.com/testcontainers/testcontainers-go"
+	tcexec "github.com/testcontainers/testcontainers-go/exec"
+	"github.com/testcontainers/testcontainers-go/wait"
+)
+
+func Exec(ctx context.Context, c tc.Container, args ...string) (int, string, error) {
+	code, r, err := c.Exec(ctx, args, tcexec.Multiplexed())
+	if err != nil {
+		return code, "", err
+	}
+	b, err := io.ReadAll(r)
+	return code, string(b), err
+}
+
+func Start(ctx context.Context, kind string) tc.Container {
+	_, file, _, _ := runtime.Caller(0)
+	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../.."))
+	binary := filepath.Join(ginkgo.GinkgoT().TempDir(), "fixture")
+	cmd := exec.CommandContext(ctx, "go", "build", "-trimpath", "-o", binary, "./tests/fixture/cmd/"+kind)
+	cmd.Dir = root
+	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=linux")
+	out, err := cmd.CombinedOutput()
+	gomega.Expect(err).NotTo(gomega.HaveOccurred(), string(out))
+	// The daemon/test endpoints must bypass an ambient HTTP proxy.
+	provider, err := tc.NewDockerProvider()
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	host, err := provider.DaemonHost(ctx)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomega.Expect(provider.Close()).To(gomega.Succeed())
+	bypass := strings.Join([]string{os.Getenv("NO_PROXY"), "localhost", "127.0.0.1", host}, ",")
+	ginkgo.GinkgoT().Setenv("NO_PROXY", bypass)
+	ginkgo.GinkgoT().Setenv("no_proxy", bypass)
+	args := map[string]*string{}
+	for _, key := range []string{"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"} {
+		if value := os.Getenv(key); value != "" {
+			v := value
+			args[key] = &v
+		}
+	}
+	req := tc.ContainerRequest{FromDockerfile: tc.FromDockerfile{Context: filepath.Join(root, "tests/fixtures/debian"), Dockerfile: "Dockerfile", BuildArgs: args, BuildLogWriter: ginkgo.GinkgoWriter, BuildOptionsModifier: func(o *client.ImageBuildOptions) { o.NetworkMode = "host" }}, Files: []tc.ContainerFile{{HostFilePath: binary, ContainerFilePath: "/usr/local/bin/fixture", FileMode: 0o755}}, WaitingFor: wait.ForExec([]string{"test", "-d", "/data"}).WithStartupTimeout(time.Minute)}
+	c, err := tc.GenericContainer(ctx, tc.GenericContainerRequest{ContainerRequest: req, Started: true})
+	if c != nil {
+		ginkgo.DeferCleanup(func() {
+			cleanup, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if ginkgo.CurrentSpecReport().Failed() {
+				logs, e := c.Logs(cleanup)
+				if e == nil {
+					_, _ = io.Copy(ginkgo.GinkgoWriter, logs)
+					_ = logs.Close()
+				}
+			}
+			gomega.Expect(c.Terminate(cleanup)).To(gomega.Succeed())
+		})
+	}
+	gomega.Expect(err).NotTo(gomega.HaveOccurred(), fmt.Sprintf("start real Debian fixture: %v", err))
+	return c
+}

@@ -3,9 +3,7 @@
 ## Scope
 
 Local implementation is verified against the proposal, deltas, design, and
-migration inventory. The change remains active because a real fresh maintainer
-agent session has not been exercised. A deterministic clean-checkout smoke is
-recorded separately below and is not a substitute for that acceptance.
+migration inventory. Fresh maintainer-agent acceptance has now also been exercised in an isolated source checkout, as recorded below. The earlier deterministic clean-checkout smoke remains separate historical evidence.
 
 ## Completeness
 
@@ -20,9 +18,8 @@ upstream MIT attribution, developer commands, Devbox setup, artifact CI, and
 validator are implemented. The maintainer rules and consumer skill template were
 byte-checked before/after repeatable workflow generation.
 
-Fresh-agent acceptance (task 5.4) is **not verified**. Archiving (5.6) is deferred
-until that check is performed. The separate `verify-public-delivery` change also
-tracks live consumer Codex behavior, native arm64/public bootstrap, indexing,
+Fresh-agent acceptance (task 5.4) is now verified in an isolated checkout within the existing development environment; archiving awaits explicit review. The separate `verify-public-delivery` change also
+tracks live consumer Codex behavior, native arm64/public bootstrap, public module/API/source checks,
 GitHub settings, and deployment acceptance.
 
 ## Correctness and scenario evidence
@@ -74,6 +71,21 @@ consumer skills. The no-ad-hoc-plans rule remains in place with the approved
 structured OpenSpec exception. Checks are developer-only, and original runtime
 behavior is unchanged.
 
-No implementation gap was identified in the checked scope. The applicable live
-fresh-agent scenario is not verified, so this report does not claim archive
-readiness. Complete task 5.4 and then archive through the normal workflow.
+No implementation gap was identified in the checked scope. The scoped fresh-agent scenario is now exercised. Review the recorded evidence and archive only through the normal explicit workflow.
+
+## Fresh maintainer-agent acceptance
+
+A new agent with no inherited conversation context worked only in an isolated
+source checkout. `task dev:setup` installed pinned OpenSpec 2.0.0 and downloaded
+dependencies; `task check:artifacts` passed before and after the exercise. The
+agent recovered explicit module registration from the knowledge/architecture
+index and library-composition concept, followed agent/registry code and registry
+tests, and located the agent-composition requirements. It used the repository's
+propose skill to create and validate a documentation-only evidence-trail proposal
+with specs explicitly skipped; implementation tasks stayed unchecked. Git status
+showed only that isolated new proposal. No source edits, commits, publication or
+archive occurred.
+
+This is a fresh agent and source checkout in the existing devcontainer, not a
+rebuilt development container, public-tag consumer discovery, or native arm64
+acceptance. Disposable artifacts/logs remain in ignored local storage.

@@ -8,6 +8,9 @@ Dome bootstraps consumer agents, but authors of reusable resource modules still 
 
 - Add `dome module init --module <go-module-path> --name <resource-module-name>` operating in the current, existing empty directory.
 - Generate a standalone Go library with public resource/module implementations, injectable host boundary, mock-based tests, and an external consumer registration example.
+- Include runnable Ginkgo/Gomega and Testcontainers integration/E2E suites, a customizable Debian fixture, and a compiled test consumer demonstrating real container effects, idempotency, and pruning.
+- Include pinned Hugo documentation build/serve tasks, a loopback-only dynamically assigned host port for the devcontainer docs server, and `task devcontainer:urls` to discover available service addresses.
+- Include a project-adapted Devbox devcontainer with Docker-in-Docker, allowlisted proxy networking, isolated caches, and Task commands matching Dome development conventions.
 - Include OpenSpec configuration, initial capability specs, pinned developer tooling and Codex workflows; an OKF v0.2 knowledge bundle; repository instructions; README and authoring/release guides.
 - Use local `go doc` against the selected dependency or checkout as the API reference in generated documentation and authoring skills; do not request pkg.go.dev indexing or gate releases on its availability. Public module retrieval may still trigger third-party indexing.
 - Generate `Taskfile.yml` as the sole task runner, with direct task implementations and consistent `task` commands in documentation and GitHub Actions; do not generate a Makefile or delegate to Make.

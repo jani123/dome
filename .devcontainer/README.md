@@ -25,7 +25,9 @@ task devcontainer:codex
 task devcontainer:codex -- resume --last
 ```
 
-VS Code/Cursor **Reopen in Container** also works. The checkout is mounted at
+VS Code/Cursor **Reopen in Container** can use the same configuration. If the
+host selects an older Compose Bake backend, launch the editor with
+`COMPOSE_BAKE=false` or use the lifecycle tasks, which select direct BuildKit. The checkout is mounted at
 `/workspaces/dome`; Devbox metadata, Go modules and caches persist in named
 volumes. On the host, `devbox shell` provides the same tools.
 
@@ -40,13 +42,15 @@ downloads the toolchain required by `go.mod` when necessary. Container creation
 also works before dependencies are downloaded. See the root README for the
 separate `task test:e2e` and `task test:integration` suites.
 
-The workspace uses an internal Docker network. HTTP(S) egress goes
+The workspace uses an isolated internal Docker bridge network. A separate
+nginx docs relay joins the private and ingress networks and publishes only the
+loopback docs port; the workspace keeps proxy-only egress. HTTP(S) egress goes
 through the Squid allowlist in `proxy/allowed-domains.txt`; direct external
 traffic and public DNS are blocked. Use HTTPS Git URLs, such as
 `https://github.com/jani123/dome.git`; SSH remotes do not use this HTTP proxy.
 The allowlist includes GitHub repository/API/release hosts, `docs.github.com`,
 and `jani123.github.io` for Dome's documentation site. No host home directory
-or Docker socket is mounted, and no application ports are published.
+or Docker socket is mounted, and the docs port is published only on host loopback with a Docker-assigned port.
 
 ## Docker-in-Docker
 
@@ -93,8 +97,7 @@ docker run --rm --network host \
 ```
 
 With the default nested bridge, the Compose hostname `proxy` is not available.
-The same allowlist applies to proxied build and container traffic. No additional
-ports are published by this setup.
+The same allowlist applies to proxied build and container traffic. Nested test ports remain separate from the workspace docs binding.
 
 After changing the image or allowlist, run `task devcontainer:rebuild`.
 This recreates the workspace container and interrupts active sessions.
@@ -108,6 +111,53 @@ successful setup to share the resolved tool versions.
 `task dev:setup` also installs the pinned native OpenSpec CLI with checksum
 verification. The Devbox shell exposes `.build/tools` and disables OpenSpec
 telemetry/update checks. Versioned maintainer skills are already in the checkout;
-refresh intentionally with `make setup-specs` after a tool upgrade. Google OKF
+refresh intentionally with `task specs:setup` after a tool upgrade. Google OKF
 knowledge is plain repository Markdown/YAML and needs no cloud credentials or
 third-party memory service. See [the maintainer workflow](../docs/development.md).
+
+## Local documentation preview
+
+Rebuild once to apply the docs port mapping, then start Hugo in a host terminal:
+
+```sh
+task devcontainer:exec -- task docs:serve
+```
+
+In another host terminal, run `task devcontainer:urls` and open the reported Docs
+URL. Docker assigns an available localhost port, allowing multiple workspaces
+to run concurrently. Hugo listens on container port 1313; live reload is disabled.
+`task docs:build` builds and checks the static guides without serving them.
+
+URL discovery reads current workspace mappings without starting containers.
+A mapping is not a readiness check: Hugo must be running. Recreated workspaces
+may receive a different port, so rerun the command. Run discovery from the host
+using the same checkout path as the Dev Container CLI. With remote Docker, the
+loopback binding belongs to the Docker host and requires access or a tunnel.
+
+Image builds forward proxy variables as standard build arguments and use the
+daemon host network to reach the proxy. Compose build entitlements make this
+explicit. Lifecycle tasks use Compose's direct BuildKit path (`COMPOSE_BAKE=false`)
+because older Compose Bake versions do not forward host-network entitlements.
+Runtime workspace networking stays private.
+
+## Running inside another restricted devcontainer
+
+A generated devcontainer can itself be tested inside a proxy-restricted parent.
+Its image builds use the parent's explicit proxy variables, but its runtime
+Squid proxy also needs an explicit upstream when the nested Docker bridge cannot
+resolve or directly reach external hosts. In that case append a parent peer to
+the nested fixture's `proxy/squid.conf`, replacing the example IP with the
+reachable trusted outer proxy address:
+
+```text
+cache_peer 192.0.2.10 parent 3128 0 no-query default name=outer-egress
+cache_peer_access outer-egress allow approved
+never_direct allow all
+```
+
+Give the nested proxy a distinct `visible_hostname` so chained HTTP requests
+are not treated as a loop; generated modules use their module name by default.
+Keep the existing allowlist and destination checks. The outer proxy must allow
+the same actual endpoints; this chain does not bypass either policy. Rebuild the
+nested proxy after changing its configuration. This is explicit network
+customization for nested verification, not an automatic download fallback.

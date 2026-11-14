@@ -38,8 +38,40 @@ is provided.
 
 Read the [guides in source](docs/content/_index.md),
 [development guide site](https://jani123.github.io/dome/next/), and
-[generated API reference](https://pkg.go.dev/github.com/jani123/dome). The hosted
-site and tagged API availability still require first deployment/release verification.
+local API reference via `go doc github.com/jani123/dome/agent` from your selected
+Go module. The hosted guide site still requires first deployment verification.
+
+## Create a resource module
+
+Run the matching tagged initializer in an **existing empty directory** (including
+no `.git`):
+
+```sh
+go run github.com/jani123/dome/cmd/dome@v0.1.0 module init --module github.com/acme/dome-widget --name widget
+task dev:setup
+task check
+task test:race
+task test:integration
+task test:e2e
+```
+
+The command generates a standalone public Go library, an explicitly unfinished
+host backend, mock-based tests, and real Debian/Testcontainers integration/E2E
+fixtures using a compiled consumer. It includes OpenSpec workflows, source-linked
+OKF knowledge, Task-only developer commands, Hugo guides, a Devbox devcontainer,
+and check-gated draft source-release workflows. `main`, keywords, unsafe names,
+and v2+ import paths are refused. Generation prepares pinned tools/dependencies
+in staging; it does not run tests, Docker, an agent, Git, or remote publishing.
+
+Use `task docs:serve` in its devcontainer and `task devcontainer:urls` on the host
+for the random-loopback docs preview. Adapt the test-only file backend and Debian
+fixture to your real domain; their success is not production backend support.
+After interrupted or partly failed publication, inspect the retained output or
+start in a new empty directory. Published paths are never removed on rollback,
+because a concurrent replacement cannot safely be deleted conditionally.
+Public-tag, native-platform, live Codex and hosted release acceptance remains
+separate from local generation tests. The stable version above remains a planned
+release until actually published.
 
 ## Maintainer knowledge and feature workflow
 
@@ -50,9 +82,9 @@ Start with the [knowledge index](knowledge/index.md) for rationale and constrain
 OKF authoring, setup, validation, and retrospective coverage of existing work.
 
 ```sh
-make tools-openspec
-make setup-specs
-make check-artifacts
+task tools:openspec
+task specs:setup
+task check:artifacts
 ```
 
 These tools belong to repository development, not the compiled agent runtime.
@@ -62,15 +94,15 @@ handovers, and session notes remain local.
 ## Onboarding development and releases
 
 ```sh
-make build-initializer              # .build/dome; dev builds refuse init
-make docs                           # pinned Hugo build + internal-link check
+task build:initializer              # .build/dome; dev builds refuse init
+task docs:build                           # pinned Hugo build + internal-link check
 scripts/build-docs.sh next           # reuse installed .build/tools/hugo
 ```
 
 To test generation before the first public tag, run the generated-consumer
 integration test: `go test -tags=integration ./tests/integration -run
 TestGeneratedConsumer -count=1`. It explicitly replaces the unpublished dependency
-with this checkout. For CLI development only, `make build-initializer
+with this checkout. For CLI development only, `task build:initializer
 VERSION=v0.1.0-rc.1` injects candidate metadata; dependency resolution still requires
 that public module version. This is not a published release.
 
@@ -105,6 +137,11 @@ See [compatibility/support policy](docs/content/releases.md),
 [customer licensing](docs/content/licensing.md), and
 [dependency review](docs/DEPENDENCY_REVIEW.md).
 
+Local preview: run `task docs:serve` in the devcontainer and
+`task devcontainer:urls` on the host to find its randomly assigned localhost URL.
+Existing containers need `task devcontainer:rebuild` once for the port mapping.
+See the [preview guide](.devcontainer/README.md#local-documentation-preview).
+
 ### GitHub Pages setup
 
 In [repository Pages settings](https://github.com/jani123/dome/settings/pages),
@@ -127,7 +164,7 @@ domain or personal access token is required.
 
 Before publishing a release, verify native bootstrap/build/execution on every
 advertised architecture, public resolution of the exact tagged Go module without
-local replacements, and pkg.go.dev license recognition and examples. Test the
+local replacements, and local `go doc` output, executable examples, and source license/notices. Test the
 published quickstart, including plan, requested apply, idempotency, configuration
 updates, pruning, and recovery. Verify Codex discovers the generated skill and can
 author a resource and playbook using the pinned API; static front-matter checks
@@ -140,7 +177,7 @@ notes or CI results rather than committing agent progress documents.
 Use Linux and Go 1.26 or newer. `go.mod` pins dependency versions; Go 1.25 with automatic toolchain downloads enabled can bootstrap the required toolchain. Docker is needed only for container tests.
 
 ```sh
-make build
+task build
 mkdir -p /tmp/dome-example
 printf 'content: hello\nversion: "1"\n' > .build/config.yaml
 .build/agent --state .build/example.db --config .build/config.yaml plan --json
@@ -290,13 +327,13 @@ agent version
 ## Tests
 
 ```sh
-make check           # formatting, vet, mocked unit tests
-make test-race       # race detector
-make test-e2e        # Ginkgo/Gomega + Testcontainers, real agent binary
-make test-integration # real boundaries plus the separate required Git HTTP/SSH suite
+task check           # formatting, vet, mocked unit tests
+task test:race       # race detector
+task test:e2e        # Ginkgo/Gomega + Testcontainers, real agent binary
+task test:integration # real boundaries plus the separate required Git HTTP/SSH suite
 ```
 
-The core E2E suite covers file creation/update/permissions, no-op reconciliation, ownership pruning, unrelated files, parallel branches, process interruption before SQLite completion, resume, resource transitions, failed transitions, invalid configuration, restart persistence, and SOPS with correct/incorrect host keys. Default unit tests use Testify assertions and mocks; retry waits, deadlines, lock contention, and CLI polling are tested using injected time. Tests involving real SQLite, atomic filesystem operations, SOPS host keys, or standalone agent files are tagged `integration` and run by `make test-integration` against isolated temporary storage. `make test-e2e` runs the independent container suite, including both standalone DAG and resource transition crashes before SQLite completion.
+The core E2E suite covers file creation/update/permissions, no-op reconciliation, ownership pruning, unrelated files, parallel branches, process interruption before SQLite completion, resume, resource transitions, failed transitions, invalid configuration, restart persistence, and SOPS with correct/incorrect host keys. Default unit tests use Testify assertions and mocks; retry waits, deadlines, lock contention, and CLI polling are tested using injected time. Tests involving real SQLite, atomic filesystem operations, SOPS host keys, or standalone agent files are tagged `integration` and run by `task test:integration` against isolated temporary storage. `task test:e2e` runs the independent container suite, including both standalone DAG and resource transition crashes before SQLite completion.
 
 The integration suite creates a repository over SSH, pushes real Git commits over SSH or smart HTTP, starts the agent in another container, reconciles updated configuration, verifies revision persistence and idempotency, restarts the container, and tests retrieval, validation, decryption, and transition failures. Containers, repositories, keys, networks, and temporary state volumes are cleaned up. There are no fake-server substitutions or automatic skips.
 
@@ -337,3 +374,18 @@ GPLv3 itself also allows other compliant source-delivery methods.
 - `modules/file`, `modules/systemd`: initial infrastructure modules.
 - `examples/basic-agent`: compiled consumer and demonstration transition resource.
 - `tests/e2e`, `tests/integration`: independent container suites.
+
+## Coordinated review
+
+Invoke `$dome-review <change-name>` in Codex for independent implementation,
+architecture, security, verification and plan-alignment reviewers. It uses bounded
+agent batches, actual read-only formatting/static/test checks, and validated JSON
+reports with one consolidated readable result. Source and task state remain
+unchanged. Logs/reports stay in ignored `.build/notes/reviews/`.
+
+Run `task tools:review` to install pinned Staticcheck, govulncheck and actionlint;
+use `task check:format`, `task check:static`, `task check:security`, and
+`task check:workflow` directly. Vulnerability database access requires the
+`vuln.go.dev` proxy allowlist entry; existing containers need a rebuild to apply
+proxy changes. Failed or unavailable checks remain visible, never passing by
+omission. See [maintainer guidance](docs/development.md).

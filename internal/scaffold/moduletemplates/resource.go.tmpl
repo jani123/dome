@@ -1,0 +1,73 @@
+// Package __NAME__ provides the scaffold for a Dome resource module.
+package __NAME__
+
+import (
+	"context"
+	"fmt"
+	"regexp"
+
+	"github.com/jani123/dome/core/fault"
+	"github.com/jani123/dome/core/resource"
+)
+
+// Resource describes one stable, non-secret resource name and desired snapshot.
+// Replace the example snapshot with a typed representation of your domain.
+type Resource struct {
+	Name    string
+	Target  resource.Snapshot
+	Backend Backend
+}
+
+var validName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
+
+func (r *Resource) ID() resource.ID { return resource.ID{Module: "__NAME__", Name: r.Name} }
+func (r *Resource) Validate() error {
+	if !validName.MatchString(r.Name) {
+		return fault.New(fault.Validation, "invalid resource name", "module", "__NAME__")
+	}
+	return nil
+}
+func (r *Resource) Desired() resource.Snapshot { return r.Target }
+
+// Transition declares the Backend contract safely repeatable, including prune.
+// Change this declaration if your real backend needs an explicit recovery DAG.
+func (r *Resource) Transition(resource.Snapshot) (string, bool, error) { return "", true, nil }
+
+func (r *Resource) Observe(ctx context.Context) (resource.Snapshot, error) {
+	if err := r.Validate(); err != nil {
+		return resource.Snapshot{}, err
+	}
+	if err := ctx.Err(); err != nil {
+		return resource.Snapshot{}, fault.Wrap(fault.Observation, err)
+	}
+	if r.Backend == nil {
+		return resource.Snapshot{}, fault.New(fault.Observation, "host backend is not implemented", "module", "__NAME__")
+	}
+	s, err := r.Backend.Observe(ctx, r.Name)
+	return s, fault.Wrap(fault.Observation, err, "module", "__NAME__", "resource_id", r.ID().String())
+}
+
+func (r *Resource) Apply(ctx context.Context, a resource.Action) error {
+	if err := r.Validate(); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return fault.Wrap(fault.Apply, err)
+	}
+	switch a {
+	case resource.Noop:
+		return nil
+	case resource.Create, resource.Update, resource.Delete:
+	default:
+		return fault.Wrap(fault.Validation, fmt.Errorf("unsupported action"))
+	}
+	if r.Backend == nil {
+		return fault.New(fault.Apply, "host backend is not implemented", "module", "__NAME__")
+	}
+	return fault.Wrap(fault.Apply, r.Backend.Apply(ctx, r.Name, a, r.Target), "module", "__NAME__", "resource_id", r.ID().String())
+}
+
+var (
+	_ resource.Resource   = (*Resource)(nil)
+	_ resource.Transition = (*Resource)(nil)
+)

@@ -3,6 +3,9 @@ version: "3"
 includes:
   devcontainer: .devcontainer/Taskfile.yml
 
+vars:
+  VERSION: '{{default "dev" .VERSION}}'
+
 tasks:
   prepare:
     desc: Prepare local development directories
@@ -43,37 +46,52 @@ tasks:
   build:initializer:
     desc: Build the development initializer (init requires a tagged build)
     cmds:
-      - make build-initializer
+      - mkdir -p .build
+      - CGO_ENABLED=0 go build -trimpath -ldflags "-X main.version={{.VERSION}}" -o .build/dome ./cmd/dome
 
   docs:
     desc: Build and check the pinned Hugo development guides
     cmds:
-      - make docs
+      - scripts/install-hugo.sh
+      - scripts/build-docs.sh next
+
+  docs:build:
+    desc: Build and validate development documentation
+    cmds:
+      - task: docs
+
+  docs:serve:
+    desc: Serve Hugo guides on container port 1313 (use devcontainer:urls on the host)
+    cmds:
+      - scripts/serve-docs.sh
 
   tools:openspec:
     desc: Install the pinned checksum-verified native OpenSpec CLI
     cmds:
-      - make tools-openspec
+      - scripts/install-openspec.sh
 
   specs:setup:
     desc: Refresh the repository's pinned Codex OpenSpec workflows
     cmds:
-      - make setup-specs
+      - scripts/setup-specs.sh
 
   check:knowledge:
     desc: Validate Google OKF format and Dome authoring policy
     cmds:
-      - make check-knowledge
+      - go run scripts/check-knowledge.go -policy
 
   check:specs:
     desc: Strictly validate active OpenSpec changes and capability specs
     cmds:
-      - make check-specs
+      - go run scripts/check-maintainer-skills.go
+      - scripts/openspec.sh validate --all --strict
 
   check:artifacts:
     desc: Validate maintained knowledge and specification artifacts
     cmds:
-      - make check-artifacts
+      - task: check:knowledge
+      - task: check:specs
+      - go run scripts/sync-module-assets.go --check
 
   test:
     desc: Run Go tests
@@ -91,9 +109,47 @@ tasks:
     desc: Check Go formatting, vet packages and run tests
     deps: [module]
     cmds:
-      - test -z "$(gofumpt -l agent cli cmd config core modules examples internal tests scripts)"
+      - task: check:format
       - go vet ./...
       - task: test
+
+  check:format:
+    desc: Check tracked and new Go source without modifying it
+    cmds:
+      - scripts/check-format.sh
+
+  tools:review:
+    desc: Install pinned review tools into ignored local storage
+    cmds:
+      - mkdir -p .build/tools
+      - GOBIN="$PWD/.build/tools" go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
+      - GOBIN="$PWD/.build/tools" go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - GOBIN="$PWD/.build/tools" go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
+
+  check:static:
+    desc: Run pinned Staticcheck
+    preconditions:
+      - sh: test -x .build/tools/staticcheck
+        msg: Run task tools:review first
+    cmds:
+      - .build/tools/staticcheck ./...
+
+  check:security:
+    desc: Check reachable Go vulnerabilities (requires vulnerability database access)
+    preconditions:
+      - sh: test -x .build/tools/govulncheck
+        msg: Run task tools:review first
+    cmds:
+      - .build/tools/govulncheck ./...
+
+  check:workflow:
+    desc: Check GitHub workflow and shell syntax
+    preconditions:
+      - sh: test -x .build/tools/actionlint
+        msg: Run task tools:review first
+    cmds:
+      - .build/tools/actionlint -shellcheck=
+      - for script in scripts/*.sh .devcontainer/*.sh; do bash -n "$script" || exit; done
 
   test:race:
     desc: Run unit tests with the Go race detector

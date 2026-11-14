@@ -1,0 +1,48 @@
+//go:build e2e
+
+package e2e_test
+
+import (
+	"testing"
+	"time"
+
+	"example.com/__MODULE__/tests/testutil"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestE2E(t *testing.T) { RegisterFailHandler(Fail); RunSpecs(t, "Module consumer E2E") }
+
+var _ = Describe("compiled consumer", func() {
+	It("plans applies repeats and prunes only managed resources", func(ctx SpecContext) {
+		c := testutil.Start(ctx, "agent")
+		Expect(c.CopyToContainer(ctx, []byte("managed: true\n"), "/data/config.yaml", 0o600)).To(Succeed())
+		Expect(c.CopyToContainer(ctx, []byte("keep"), "/data/unrelated", 0o600)).To(Succeed())
+		run := func(args ...string) string {
+			code, out, err := testutil.Exec(ctx, c, append([]string{"fixture", "--state", "/data/state.db", "--config", "/data/config.yaml", "--json"}, args...)...)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(0), out)
+			return out
+		}
+		Expect(run("plan")).To(ContainSubstring("create"))
+		code, _, err := testutil.Exec(ctx, c, "test", "!", "-e", "/data/managed")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(code).To(Equal(0))
+		run("apply")
+		code, out, err := testutil.Exec(ctx, c, "cat", "/data/managed")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(code).To(Equal(0))
+		Expect(out).To(Equal("fixture"))
+		Expect(run("apply")).To(ContainSubstring("no-op"))
+		Expect(c.CopyToContainer(ctx, []byte("managed: false\n"), "/data/config.yaml", 0o600)).To(Succeed())
+		run("apply")
+		code, _, err = testutil.Exec(ctx, c, "test", "!", "-e", "/data/managed")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(code).To(Equal(0))
+		code, out, err = testutil.Exec(ctx, c, "cat", "/data/unrelated")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(code).To(Equal(0))
+		Expect(out).To(Equal("keep"))
+	}, NodeTimeout(5*time.Minute))
+})

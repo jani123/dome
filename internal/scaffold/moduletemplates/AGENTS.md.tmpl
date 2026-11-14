@@ -1,0 +1,16 @@
+# Module authoring rules
+
+Read knowledge/index.md and relevant OpenSpec requirements before changing behavior.
+Plan scoped changes in OpenSpec, implement, verify, then sync/archive completed scope.
+Keep notes in ignored .build/notes, not tracked handovers. Maintain docs, specs and
+source-linked OKF knowledge together; do not invent verification provenance.
+
+Use public Dome APIs and local go doc for the selected version. Define topology in
+Go; register explicitly. Preserve non-secret identities/snapshots, real observation,
+safe repeatable apply, post-apply verification and identity-only restore for pruning.
+The default backend is unfinished; do not report it as production support.
+
+Unit tests mock boundaries with Testify. Real boundary tests use integration tags;
+container E2E uses Ginkgo/Gomega and Testcontainers. Run task check, task test:race,
+task test:integration, task test:e2e, task check:artifacts and task docs:build for
+substantial changes. Missing real dependencies fail checks; do not stub or skip.

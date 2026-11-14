@@ -1,0 +1,298 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "review_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "report_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "enum": [
+        "implementation",
+        "architecture",
+        "security",
+        "verification",
+        "plan"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "passed",
+        "findings",
+        "blocked",
+        "incomplete",
+        "stale"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inspected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "completed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "unperformed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "check": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "check",
+              "reason"
+            ]
+          }
+        }
+      },
+      "required": [
+        "inspected",
+        "completed",
+        "unperformed"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "info"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "condition": {
+            "type": "string",
+            "minLength": 1
+          },
+          "impact": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "recommendation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "enum": [
+              "demonstrated",
+              "unverified"
+            ]
+          },
+          "origins": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "report_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "finding_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "report_id",
+                "finding_id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "title",
+          "path",
+          "line",
+          "condition",
+          "impact",
+          "evidence_ids",
+          "recommendation",
+          "confidence",
+          "origins"
+        ]
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "source",
+              "command"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cwd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tool_versions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "exit_code": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "outcome": {
+            "enum": [
+              "passed",
+              "failed",
+              "blocked",
+              "cancelled",
+              "not_applicable"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reference",
+          "command",
+          "cwd",
+          "tool_versions",
+          "started_at",
+          "finished_at",
+          "exit_code",
+          "outcome",
+          "required",
+          "reason"
+        ]
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "review_id",
+    "report_id",
+    "input_id",
+    "role",
+    "outcome",
+    "coverage",
+    "findings",
+    "evidence",
+    "limitations"
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

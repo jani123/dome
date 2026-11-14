@@ -1,0 +1,59 @@
+version: '3'
+includes:
+  devcontainer: .devcontainer/Taskfile.yml
+tasks:
+  prepare:
+    cmds: [mkdir -p .build .codex-local]
+  dev:setup:
+    cmds:
+      - task: prepare
+      - go mod download
+      - task: tools:openspec
+      - task: tools:format
+  doctor:
+    cmds: [go version, task --version, git --version, docker info]
+  build:
+    cmds: [go build ./...]
+  test:
+    cmds: [go test ./...]
+  test:race:
+    cmds: [go test -race ./...]
+  test:integration:
+    cmds: [go test -tags=integration ./tests/integration -count=1 -timeout=10m]
+  test:e2e:
+    cmds: [go test -tags=e2e ./tests/e2e -count=1 -timeout=10m]
+  tools:format:
+    cmds:
+      - mkdir -p .build/tools
+      - GOBIN="$PWD/.build/tools" go install mvdan.cc/gofumpt@v0.12.0
+  check:
+    cmds:
+      - scripts/check-format.sh
+      - go vet ./...
+      - task: test
+  tools:openspec:
+    cmds: [scripts/install-openspec.sh]
+  specs:setup:
+    cmds: [scripts/setup-specs.sh]
+  check:knowledge:
+    cmds: [go run scripts/check-knowledge.go -policy]
+  check:specs:
+    cmds:
+      - go run scripts/check-maintainer-skills.go
+      - scripts/openspec.sh validate --all --strict
+  check:artifacts:
+    cmds:
+      - task: check:knowledge
+      - task: check:specs
+  docs:build:
+    cmds:
+      - scripts/install-hugo.sh
+      - .build/tools/hugo --source docs --destination "$PWD/.build/docs" --panicOnWarning
+  docs:serve:
+    cmds: [scripts/serve-docs.sh]
+  check:workflow:
+    cmds:
+      - mkdir -p .build/tools
+      - GOBIN="$PWD/.build/tools" go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
+      - .build/tools/actionlint -shellcheck= .github/workflows/*.yml
+      - for script in scripts/*.sh .devcontainer/*.sh; do bash -n "$script" || exit; done

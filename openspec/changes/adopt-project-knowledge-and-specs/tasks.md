@@ -32,14 +32,15 @@
 - [x] 5.1 Add concise maintainer guidance for reading relevant knowledge/specs, proposing changes, implementing, verifying, updating memory/docs, and archiving completed scope.
 - [x] 5.2 Add Make/Task validation commands and dedicated CI checks for the bundle and strict OpenSpec validation.
 - [x] 5.3 Verify that malformed disposable fixtures fail checks and that ordinary handovers/scratch notes remain ignored while structured artifacts are tracked.
-- [ ] 5.4 Exercise clean development setup and a fresh agent session: recover a prior decision, locate its source/spec, and prepare a small correctly scoped change without reading historical handovers.
+- [x] 5.4 Exercise clean development setup and a fresh agent session: recover a prior decision, locate its source/spec, and prepare a small correctly scoped change without reading historical handovers.
 - [x] 5.5 Run the checks required for the final implementation and reconcile evidence/limitations.
-- [ ] 5.6 Archive this change only after the remaining fresh-agent acceptance is verified.
 
 ## Verification boundary
 
-The source-linked baseline and knowledge import are implemented. A real fresh
-maintainer agent session (5.4) remains unperformed and is also tracked by
-`verify-public-delivery`, task 4. A clean-checkout tool/retrieval/proposal exercise
+The source-linked baseline and knowledge import are implemented. A fresh isolated maintainer agent session (5.4) is now exercised; see verification.md for the evidence and environment boundary. `verify-public-delivery` references that evidence without a duplicate task. A clean-checkout tool/retrieval/proposal exercise
 can validate installation and artifact flow but must not be reported as a live
-agent test. Keep this change active until its scoped verification is complete.
+agent test. This scoped local acceptance is complete; archive remains an explicit lifecycle follow-up.
+
+## Workflow follow-up
+
+- Archive this change only after task 5.4 fresh-agent acceptance is verified. Archiving is lifecycle follow-up, not an additional implementation task.

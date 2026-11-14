@@ -69,3 +69,9 @@ marketplace.cursorapi.com
 cursor-cdn.com
 downloads.cursor.com
 anysphere-binaries.s3.us-east-1.amazonaws.com
+
+# Go vulnerability database for govulncheck
+vuln.go.dev
+
+# Docker CE signing key and packages used by the Docker-in-Docker feature.
+download.docker.com

@@ -10,8 +10,8 @@ Keep these delivery checks visible until supported by actual evidence.
 
 - Verify the existing onboarding and release workflow against real supported
   platforms, coding-agent sessions, public module resolution, and GitHub settings.
-- Validate a fresh session can use the new maintainer memory/spec workflow, and
-  separately validate the generated consumer skill through a real Codex exercise.
+- Validate the generated consumer skill through a real Codex exercise. Fresh
+  maintainer-session acceptance remains owned by adopt-project-knowledge-and-specs.
 - Publish reviewed artifacts/guides only after the release gates and publication
   authorization/access are satisfied; retain any unperformed check as active.
 
@@ -29,5 +29,5 @@ skips deltas. A defect requiring changed behavior gets its own scoped delta.
 ## Impact
 
 Affects release evidence, GitHub configuration, native CI runners, guide/package
-availability, and live maintainer/consumer workflows. No new runtime feature or
+availability, and live consumer workflows. No new runtime feature or
 fictional reconstruction of past release approvals is included.

@@ -24,12 +24,12 @@ guess. Preserve secrets outside tracked artifacts.
 ## Tooling and commands
 
 ```sh
-make tools-openspec                    # official pinned native binary + checksum
-make setup-specs                       # refresh seven maintainer Codex workflows
+task tools:openspec                    # official pinned native binary + checksum
+task specs:setup                       # refresh seven maintainer Codex workflows
 export PATH="$PWD/.build/tools:$PATH"   # for direct CLI/skill invocation outside Devbox
-make check-knowledge                   # format plus Dome authoring policy
-make check-specs                       # strict OpenSpec checks
-make check-artifacts                   # both document checks
+task check:knowledge                   # format plus Dome authoring policy
+task check:specs                       # strict OpenSpec checks
+task check:artifacts                   # both document checks
 scripts/openspec.sh list --specs
 scripts/openspec.sh list
 ```
@@ -136,10 +136,42 @@ where behavior is implemented/tested; they do not assert a new passing test run.
 | [customer-source-access](../openspec/specs/customer-source-access/spec.md) | [Rationale](../knowledge/decisions/customer-independence.md) | [LICENSE](../LICENSE); [README.md](../README.md); [docs/content/licensing.md](../docs/content/licensing.md); [docs/DEPENDENCY_REVIEW.md](../docs/DEPENDENCY_REVIEW.md); [scripts/release.sh](../scripts/release.sh) |
 | [documentation-publishing](../openspec/specs/documentation-publishing/spec.md) | [Rationale](../knowledge/operations/versioned-documentation.md) | [docs/hugo.toml](../docs/hugo.toml); [docs/layouts/_default/baseof.html](../docs/layouts/_default/baseof.html); [scripts/install-hugo.sh](../scripts/install-hugo.sh); [scripts/build-docs.sh](../scripts/build-docs.sh); [scripts/build-site.sh](../scripts/build-site.sh); [.github/workflows/docs.yml](../.github/workflows/docs.yml) |
 | [release-distribution](../openspec/specs/release-distribution/spec.md) | [Rationale](../knowledge/operations/release-and-compatibility.md) | [docs/content/releases.md](../docs/content/releases.md); [.github/workflows/release.yml](../.github/workflows/release.yml); [.github/workflows/ci.yml](../.github/workflows/ci.yml); [scripts/release.sh](../scripts/release.sh); [scripts/smoke-release.sh](../scripts/smoke-release.sh) |
-| [development-environment](../openspec/specs/development-environment/spec.md) | [Rationale](../knowledge/operations/proxy-and-real-tests.md) | [.devcontainer/README.md](../.devcontainer/README.md); [.devcontainer/proxy/allowed-domains.txt](../.devcontainer/proxy/allowed-domains.txt); [.devcontainer/compose.yaml](../.devcontainer/compose.yaml); [tests/integration/gitserver/Dockerfile](../tests/integration/gitserver/Dockerfile); [internal/testutil/containers.go](../internal/testutil/containers.go); [Makefile](../Makefile); [AGENTS.md](../AGENTS.md) |
+| [development-environment](../openspec/specs/development-environment/spec.md) | [Rationale](../knowledge/operations/proxy-and-real-tests.md) | [.devcontainer/README.md](../.devcontainer/README.md); [.devcontainer/proxy/allowed-domains.txt](../.devcontainer/proxy/allowed-domains.txt); [.devcontainer/compose.yaml](../.devcontainer/compose.yaml); [tests/integration/gitserver/Dockerfile](../tests/integration/gitserver/Dockerfile); [internal/testutil/containers.go](../internal/testutil/containers.go); [Taskfile.yml](../Taskfile.yml); [AGENTS.md](../AGENTS.md) |
 
 New knowledge/spec workflow capabilities are introduced through their actual
 OpenSpec change, rather than misrepresented as pre-existing runtime features.
 Pending delivery verification remains a separate active change. Source-linked
 knowledge captures limitations such as mocked systemd coverage, unsupported Git
 authentication modes, and the distinction between cross-build and native tests.
+
+## Preview the guides
+
+Run `task docs:serve` inside the devcontainer, then `task devcontainer:urls`
+on the host to find the dynamically assigned localhost URL. See the
+[devcontainer preview instructions](../.devcontainer/README.md#local-documentation-preview)
+for initial rebuild, stopped services, and remote Docker access.
+`task docs:build` validates a static snapshot.
+
+## Independent change review
+
+`$dome-review <change-name>` coordinates separate implementation, architecture,
+security, verification-execution and OpenSpec alignment subagents. They share an
+identified input state but inspect it independently. The verification agent owns
+check execution to avoid duplicate suites and shared-output races. Agent capacity
+limits cause batching, not missing review roles.
+
+Install pinned analysis tools with `task tools:review`. Format checks are
+non-mutating and include new Go files; Staticcheck, govulncheck, actionlint and
+applicable real tests produce explicit results. No review auto-fixes, commits or
+archives. Each specialist and the aggregate use versioned JSON Schemas under
+[the skill](../.agents/skills/dome-review/SKILL.md); validate reports with
+`go run scripts/check-review-report.go`, using `--aggregate` for the summary.
+Reports retain source/finding provenance, command outcomes and limits under
+ignored `.build/notes/reviews/`. Invalid/missing/stale reports or failed/blocked
+required checks prevent a passing result.
+
+The module initializer copies selected developer assets into its embedded
+starter. After intentionally changing shared sources run
+`go run scripts/sync-module-assets.go` and verify with `--check`; maintain the
+GPL and upstream OpenSpec MIT provenance. Generated repositories import only
+public Dome APIs; their knowledge validator is repository-local source.

@@ -12,7 +12,7 @@
 <div class="layout"><nav aria-label="Guides">
 {{ range .Site.RegularPages.ByWeight }}<a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}
 <a href="https://github.com/jani123/dome">Source</a>
-{{ if eq .Site.Params.version "next" }}<a href="https://pkg.go.dev/github.com/jani123/dome">API reference (check your pinned version)</a>{{ else }}<a href="https://pkg.go.dev/github.com/jani123/dome@{{ .Site.Params.version }}">API reference {{ .Site.Params.version }}</a>{{ end }}
+<p>API: <code>go doc github.com/jani123/dome/agent</code><br>Run in your selected Go module.</p>
 <a href="https://jani123.github.io/dome/">Documentation versions</a>
 </nav><main>{{ block "main" . }}{{ end }}</main></div>
 <footer>Customers should receive source, configuration, and build material with their agent. Paid implementation and support are welcome.</footer>

@@ -1,0 +1,39 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	m "example.com/__MODULE__"
+	"example.com/__MODULE__/tests/fixture"
+
+	"github.com/jani123/dome/agent"
+	"github.com/jani123/dome/cli"
+	"github.com/jani123/dome/config"
+	"github.com/jani123/dome/core/resource"
+)
+
+type Settings struct {
+	Managed *bool `yaml:"managed"`
+}
+
+func main() {
+	a, err := agent.New(agent.WithSQLite("/data/state.db"), agent.WithModules(m.Module{Backend: fixture.Backend{Root: "/data"}}), agent.WithDesiredState(func(ctx context.Context, doc config.Document) ([]resource.Resource, error) {
+		settings, _, err := config.Parse[Settings, struct{}](ctx, doc, nil)
+		if err != nil {
+			return nil, err
+		}
+		if settings.Managed != nil && !*settings.Managed {
+			return nil, nil
+		}
+		return []resource.Resource{&m.Resource{Name: "managed", Target: resource.Snapshot{Exists: true, Value: "fixture"}, Backend: fixture.Backend{Root: "/data"}}}, nil
+	}))
+	if err == nil {
+		err = a.Execute(context.Background())
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, agent.ErrorText(err))
+		os.Exit(cli.ExitCode(err))
+	}
+}

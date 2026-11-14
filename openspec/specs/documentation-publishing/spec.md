@@ -6,18 +6,27 @@ Retrospective specification of behavior inspected at `3e262920bbc20e41f843250f78
 This baseline documents existing implementation; it does not assert that these
 requirements were authored before the code or that external acceptance passed.
 
+Local API guidance was subsequently revised by
+[use-local-api-documentation](../../changes/use-local-api-documentation/proposal.md);
+that revision is not attributed to the historical import above.
+
 ## Requirements
 
 ### Requirement: Pinned guide build
 
-Guides SHALL build with pinned checksum-verified Hugo and checked internal paths under /dome/; API references SHALL link to pkg.go.dev at the guide version.
+Guides SHALL build with pinned checksum-verified Hugo and checked internal paths under /dome/; API reference guidance SHALL use local `go doc` against the selected checkout or dependency version, without requiring pkg.go.dev indexing or availability.
 
 Evidence: [scripts/build-docs.sh](../../../scripts/build-docs.sh).
 
 #### Scenario: Pinned guide build
 
 - **WHEN** an RC guide is built
-- **THEN** its bootstrap command and API reference use that RC version
+- **THEN** its bootstrap command uses that RC version and API guidance explains selecting that version locally before running `go doc`
+
+#### Scenario: Hosted API index unavailable
+
+- **WHEN** pkg.go.dev is unavailable or has not indexed the selected version
+- **THEN** users can inspect that version with local `go doc` after its source is available and no release gate waits for hosted documentation
 
 ### Requirement: Retained published snapshots
 
@@ -52,4 +61,4 @@ Evidence: [.github/workflows/docs.yml](../../../.github/workflows/docs.yml).
 
 Local HTML/link checks are not evidence of an externally deployed site. Owner Pages settings and deployment permissions need verification in GitHub.
 
-Rationale: [Guides track release versions while pkg.go.dev supplies generated API reference.](../../../knowledge/operations/versioned-documentation.md).
+Rationale: [Guides track release versions while local go doc describes the selected Go API.](../../../knowledge/operations/versioned-documentation.md).
