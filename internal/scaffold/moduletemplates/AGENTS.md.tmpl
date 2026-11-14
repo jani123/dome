@@ -1,7 +1,18 @@
 # Module authoring rules
 
 Read knowledge/index.md and relevant OpenSpec requirements before changing behavior.
-Plan scoped changes in OpenSpec, implement, verify, then sync/archive completed scope.
+Use OpenSpec for features, architecture, public API/CLI or configuration contract
+changes, migrations, breaking upgrades, changes to recovery/state/security guarantees,
+significant cross-cutting design or acceptance, and explicit user requests.
+Implement routine compatible dependency/security patches, bug fixes restoring
+specified behavior, refactors and docs/test/CI maintenance directly with relevant
+checks and documentation. Judge actual impact; if qualifying scope emerges, plan
+it before implementing it. Do not create proposals solely to log maintenance.
+Add appropriate regression coverage for bug fixes. If a bug reveals a missing,
+ambiguous or incorrect feature requirement, update the affected OpenSpec scenario
+and requirement alongside executable tests. Restoring an already specified
+contract needs no proposal; changing the intended contract follows the rules above.
+For OpenSpec changes, plan, implement, verify, then sync/archive completed scope.
 Keep notes in ignored .build/notes, not tracked handovers. Maintain docs, specs and
 source-linked OKF knowledge together; do not invent verification provenance.
 

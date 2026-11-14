@@ -17,14 +17,36 @@ public API examples, supported behavior, and development commands.
   guidance into the relevant README or documentation. Integrate that material for
   its readers; do not preserve a working plan by renaming it as documentation.
 - Before changing behavior, read relevant entries from `knowledge/index.md` and
-  `openspec/specs/`, then follow their code/test sources. Use OpenSpec changes for
-  scoped requirements, design, tasks, verification, and completed archives.
+  `openspec/specs/`, then follow their code/test sources. Apply the OpenSpec scope rule below.
 - Update affected specs, curated knowledge, and user documentation together.
   Preserve source/verification provenance; do not turn historical test results or
   local builds into current or public acceptance claims. Run `task check:artifacts`
   when these maintained artifacts change; setup is documented in `docs/development.md`.
 - Before committing, inspect staged files for working documents. Ignore patterns
   are a convenience, not an exception to this rule.
+
+## When to use OpenSpec
+
+- Use an OpenSpec change for new features, architectural changes, public API/CLI
+  or configuration contract changes, migrations or breaking upgrades, and changes
+  to reconciliation, recovery, persisted-state or security guarantees. Use it when
+  significant cross-cutting work needs design decisions or coordinated acceptance,
+  or when the user explicitly requests it.
+- Routine dependency/security patches, compatible toolchain updates, bug fixes
+  restoring specified behavior, internal refactors, and documentation, test or CI
+  maintenance do not require a new proposal unless they meet a criterion above.
+  Judge the actual impact, not merely the change category or number of files.
+- For routine work, implement directly, run relevant checks, and update affected
+  documentation and existing specs only when their content changes. Do not create
+  proposals, tasks or new requirements solely to record maintenance work.
+- Bug fixes require regression coverage at the appropriate level. If a bug
+  exposes a missing, ambiguous or incorrect feature requirement, update the
+  affected OpenSpec requirement/scenario as well as executable tests. Restoring
+  an already specified behavior does not require a new proposal; changing the
+  intended contract follows the OpenSpec criteria above.
+- For qualifying work, record requirements, design, tasks and verification in
+  OpenSpec before implementation. If routine work reveals a qualifying change,
+  plan that expanded scope before implementing it. Keep ordinary notes local.
 
 ## Architecture and configuration
 

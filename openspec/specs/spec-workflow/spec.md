@@ -14,20 +14,49 @@ Implementation evidence: [maintainer guide](../../../docs/development.md),
 
 ### Requirement: Structured change lifecycle
 
-The repository SHALL use committed OpenSpec capability specs and change
-artifacts for feature requirements, design, implementation tasks, verification,
-and completed-change archives. Ad hoc plan and handover documents SHALL remain
-outside version control.
+The repository SHALL use committed OpenSpec specs and change artifacts for
+features, architecture, public contracts, migrations, breaking upgrades, guarantee
+changes, significant cross-cutting design or acceptance, and explicit user requests.
+Routine compatible patches and maintenance SHALL proceed without new proposals
+unless they meet those criteria. Ad hoc plans and handovers SHALL remain local.
 
 #### Scenario: Plan a new feature
 
-- **WHEN** a maintainer proposes behavior changes
+- **WHEN** a maintainer proposes a change meeting the OpenSpec scope criteria
 - **THEN** the change identifies affected capabilities, observable requirements, design decisions, implementation work, and validation within the structured OpenSpec layout
+
+#### Scenario: Routine dependency security patch
+
+- **WHEN** a compatible dependency or toolchain patch preserves existing contracts and guarantees
+- **THEN** maintainers implement and verify it directly without creating a proposal solely to record the update
+
+#### Scenario: Maintenance reveals a migration
+
+- **WHEN** an upgrade requires a migration, breaking contract change or architectural decision
+- **THEN** the expanded scope is planned in OpenSpec before it is implemented
 
 #### Scenario: Preserve the working-notes rule
 
 - **WHEN** an agent creates a standalone session handover outside OpenSpec
 - **THEN** it remains local and lasting information is integrated into maintained documentation or curated knowledge
+
+### Requirement: Bug regression coverage and feature alignment
+
+Bug fixes SHALL include appropriate executable regression coverage. When a bug
+reveals missing, ambiguous or incorrect feature requirements, maintainers SHALL
+update the affected OpenSpec requirements/scenarios. Restoring an already
+specified contract SHALL NOT alone require a new proposal; changes to the intended
+contract SHALL follow the OpenSpec scope criteria.
+
+#### Scenario: Regression against specified behavior
+
+- **WHEN** a bug violates an existing unambiguous requirement
+- **THEN** the fix adds appropriate executable regression coverage without requiring a new proposal solely to record the fix
+
+#### Scenario: Bug exposes a feature specification gap
+
+- **WHEN** a bug reveals missing, ambiguous or incorrect intended behavior in a feature specification
+- **THEN** the fix updates affected requirements/scenarios alongside executable regression coverage and uses a proposal if the intended contract changes
 
 ### Requirement: Evidence-based import of existing work
 

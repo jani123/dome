@@ -50,6 +50,33 @@ version, without rejecting unrelated installed skills. The
 upstream MIT license is preserved in `.agents/OPENSPEC_LICENSE`. Do not overwrite
 the consumer Dome skill template or replace repository rules with tool defaults.
 
+## Choosing the change workflow
+
+Use OpenSpec for features, architectural changes, public API/CLI or configuration
+contract changes, migrations and breaking upgrades, changes to reconciliation,
+recovery, persisted-state or security guarantees, and significant cross-cutting
+work requiring design decisions or coordinated acceptance. Explicit user requests
+for OpenSpec also select this workflow.
+
+Implement routine dependency/security patches, compatible toolchain updates,
+bug fixes restoring specified behavior, internal refactors, and documentation,
+test or CI maintenance directly. Run relevant checks and update affected docs;
+update existing specs when their content changes. A security patch does not by
+itself redefine a security guarantee. Assess actual impact: an upgrade requiring
+migration or a refactor changing architecture still needs OpenSpec. If that scope
+emerges during routine work, plan the expanded scope before implementing it.
+Do not invent requirements or proposals solely to log maintenance.
+
+Bug fixes need regression coverage at the appropriate level. When a bug reveals
+a missing, ambiguous or incorrect feature requirement, update the affected
+OpenSpec requirement/scenario alongside executable tests. A regression test
+captures the failure; a feature scenario clarifies the intended contract.
+Restoring already specified behavior needs no new proposal. Changing the intended
+contract follows the OpenSpec criteria above.
+
+The [repository rules](../AGENTS.md) define this boundary. The lifecycle below
+applies to changes that need OpenSpec.
+
 ## Change lifecycle
 
 1. Read relevant knowledge and capability specs, then inspect their sources.

@@ -14,6 +14,17 @@ sources:
 The owner rejected committed ad hoc plans and handovers because durable guidance
 belongs in maintained documentation. Structured OpenSpec artifacts are the
 explicit exception for proposals, design, tasks, verification and archives.
+OpenSpec is reserved for features, architecture, contract or guarantee changes,
+migrations, breaking upgrades, and significant cross-cutting design or acceptance.
+Routine compatible dependency/security updates and maintenance proceed directly
+with relevant verification and documentation. A patch restoring an existing
+security guarantee does not itself change that guarantee. This boundary avoids
+turning structured specifications into a maintenance log; actual impact and
+explicit user requests determine when a proposal is warranted. Bug fixes retain
+regression coverage; gaps or ambiguity in intended behavior also belong in the
+affected feature requirements/scenarios, not solely in an executable test. This
+does not require a new proposal for restoring an already specified contract.
+
 Google OKF concepts preserve rationale and source-linked facts across sessions;
 they must not become transcripts or renamed progress logs.
 
