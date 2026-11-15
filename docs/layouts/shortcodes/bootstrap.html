@@ -1,0 +1,22 @@
+{{- $version := .Site.Params.version -}}
+{{- $flag := "--module" -}}
+{{- if eq $version "next" -}}
+  {{- $version = "main" -}}
+  {{- $flag = "--project-module" -}}
+{{- end -}}
+{{- $command := printf "go run github.com/jani123/dome/cmd/dome@%s init my-machine %s example.com/my-machine\ncd my-machine" $version $flag -}}
+<div class="command-tabs" data-tabs>
+  <div class="command-tab-list" role="tablist" aria-label="Bootstrap environment">
+    <button type="button" id="bootstrap-go-tab" role="tab" aria-selected="true" aria-controls="bootstrap-go-panel" tabindex="0">Go</button>
+    <button type="button" id="bootstrap-docker-tab" role="tab" aria-selected="false" aria-controls="bootstrap-docker-panel" tabindex="-1">Docker</button>
+  </div>
+  <section id="bootstrap-go-panel" role="tabpanel" aria-labelledby="bootstrap-go-tab" tabindex="0">
+    {{ highlight $command "sh" "" }}
+  </section>
+  <section id="bootstrap-docker-panel" role="tabpanel" aria-labelledby="bootstrap-docker-tab" tabindex="0" hidden>
+    <p>Open a Go shell in Docker, then run the remaining quickstart commands inside it:</p>
+    {{ highlight "docker run --rm -it \\\n  --user \"$(id -u):$(id -g)\" \\\n  --env HOME=/tmp \\\n  --volume \"$PWD:/workspace\" --workdir /workspace \\\n  golang:1.26.11-bookworm bash" "sh" "" }}
+    {{ highlight $command "sh" "" }}
+  </section>
+</div>
+<noscript><p>For Docker: open a shell with <code>docker run --rm -it --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$PWD:/workspace" --workdir /workspace golang:1.26.11-bookworm bash</code>, then run the Go commands inside it.</p></noscript>

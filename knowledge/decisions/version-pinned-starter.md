@@ -4,6 +4,10 @@ title: "Project initialization"
 description: "One immutable version binds generated source, dependency, skill, and template metadata."
 generated: {by: codex/2026-11-13, at: "2026-11-13T07:03:33Z"}
 sources:
+  - id: source-external-modules
+    resource: ../../internal/scaffold/external_modules.go
+  - id: source-quickstart
+    resource: ../../docs/content/quickstart.md
   - id: source-module
     resource: ../../internal/scaffold/module.go
   - id: source-module-publish
@@ -23,6 +27,19 @@ sources:
 # Project initialization
 
 A dependency alone cannot install coding-agent skills or instructions. The initializer therefore embeds matching assets, validates the requested consumer module and canonical exact v0 release or resolved Go pseudo-version, resolves dependencies in a staged directory, and atomically publishes a fresh project. The sandbox and tracked placeholder keep the first exercise unprivileged and reproducible after cloning.
+
+Consumer init requires `--project-module` to name the generated Go module,
+without a compatibility alias for that identity. The identity need not
+be hosted online. Resource-module init keeps its existing `--module` contract.
+Repeatable consumer `--module path@version` inputs select external root Go module
+packages exporting `Module`; generation assigns unique import aliases and emits
+explicit `Module{}` registrations. Users configure backend or constructor
+parameters in the generated Go before building. Staged dependency resolution
+refuses changes to the requested Dome and external-module pins, preserving asset
+alignment and avoiding publishing a project with silently changed dependencies.
+The quickstart offers a pinned Go Docker shell with caller UID/GID and a bind
+mount, keeping Go tooling in the container and project files in the working
+directory. Keep agent invocations in the same mounted path for stable identity.
 
 Consumer initialization from main uses Go's resolved immutable pseudo-version for
 the dependency and every generated version field. Unversioned local builds and

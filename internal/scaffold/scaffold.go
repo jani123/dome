@@ -21,6 +21,15 @@ var templates embed.FS
 
 // Render is pure: callers publish the returned files only after validation.
 func Render(modulePath, version string) (map[string][]byte, error) {
+	return RenderWithModules(modulePath, version, nil)
+}
+
+// RenderWithModules adds pinned external root packages with editable Module registrations.
+func RenderWithModules(modulePath, version string, selections []string) (map[string][]byte, error) {
+	external, err := externalModules(modulePath, selections)
+	if err != nil {
+		return nil, err
+	}
 	if err := module.CheckPath(modulePath); err != nil {
 		return nil, fault.Wrap(fault.Validation, err)
 	}
@@ -35,8 +44,11 @@ func Render(modulePath, version string) (map[string][]byte, error) {
 	if module.IsPseudoVersion(version) {
 		guideVersion = "next"
 	}
-	data := struct{ Module, Version, GuideVersion string }{modulePath, version, guideVersion}
-	err := fs.WalkDir(templates, "templates", func(path string, entry fs.DirEntry, err error) error {
+	data := struct {
+		Module, Version, GuideVersion string
+		ExternalModules               []externalModule
+	}{modulePath, version, guideVersion, external}
+	err = fs.WalkDir(templates, "templates", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

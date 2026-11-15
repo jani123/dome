@@ -26,12 +26,19 @@ for version in next v0.2.0 v0.2.0-rc.1; do
   HUGO_PARAMS_VERSION="$version" HUGO_PARAMS_DOCVERSIONS='' \
     .build/tools/hugo --source docs --destination "$output/$version" \
     --baseURL "https://jani123.github.io/dome/$version/" --panicOnWarning
+  quickstart=$(cat "$output/$version/quickstart/index.html")
+  [[ "$quickstart" == *'id="bootstrap-go-tab" role="tab" aria-selected="true"'* ]]
+  [[ "$quickstart" == *'id="bootstrap-docker-tab" role="tab" aria-selected="false"'* ]]
+  [[ "$quickstart" == *'id="bootstrap-docker-panel" role="tabpanel" aria-labelledby="bootstrap-docker-tab" tabindex="0" hidden'* ]]
   expected=$version
   [[ "$version" != next ]] || expected=main
   page=$(cat "$output/$version/quickstart/index.html")
   [[ "$page" == *"github.com/jani123/dome/cmd/dome@$expected"* ]]
   if [[ "$version" == next ]]; then
+    [[ "$page" == *'--project-module example.com/my-machine'* ]]
     [[ "$page" != *'github.com/jani123/dome/cmd/dome@v0.1.0'* ]]
+  else
+    [[ "$page" == *'--module example.com/my-machine'* ]]
   fi
 done
 echo 'Documentation bootstrap version checks passed'

@@ -25,6 +25,24 @@ go doc github.com/jani123/dome/core/resource
 go doc github.com/jani123/dome/modules/file
 ```
 
+## Include external modules
+
+For a new project, repeat `--module` for each external root Go module:
+
+```sh
+go run github.com/jani123/dome/cmd/dome@main init my-machine \
+  --project-module example.com/my-machine \
+  --module github.com/acme/dome-widget@v0.1.0
+```
+
+Replace the illustrative external path with a real published module and exact
+version. This initializer option is available in development builds; older tagged
+initializers do not support it. Each selected root package must export `Module`.
+The generated Go imports and registers `Module{}` with a unique alias; edit
+`cmd/agent/main.go` to supply any required constructor, backend, or configuration
+parameters before building. Initialization resolves dependencies, preserves the
+requested version pins, and never compiles or applies the generated agent.
+
 ## Playbooks and transitions
 
 Use explicit graph dependencies and named resource locks, rather than list order.

@@ -22,7 +22,7 @@ go test ./...
 ./agent apply --json
 ```
 
-Use Linux amd64/arm64 and Go 1.26.11+. Native release smoke tests gate platform
+Use Linux amd64/arm64 and Go 1.26.11+ (locally or in Docker). Native release smoke tests gate platform
 claims. Open Codex in the project and ask it to use the `dome` skill. Adding a Go
 dependency alone does not install skills. The compiled consumer runs without AI.
 Generate a fresh subdirectory when adding to an existing project; the initializer
@@ -34,8 +34,45 @@ The library, initializer, skill, and templates use one exact version. For a
 development consumer from main, run:
 
 ```sh
-go run github.com/jani123/dome/cmd/dome@main init my-machine --module example.com/my-machine
+go run github.com/jani123/dome/cmd/dome@main init my-machine --project-module example.com/my-machine
 ```
+
+`--project-module` names the Go module being created; it does not add a dependency
+and the name does not need to exist online. Older tagged initializers used
+`--module` for this identity; current initialization uses `--project-module`.
+
+To include external resource modules, repeat `--module` with the root Go module
+path and an exact version:
+
+```sh
+go run github.com/jani123/dome/cmd/dome@main init my-machine \
+  --project-module example.com/my-machine \
+  --module github.com/acme/dome-widget@v0.1.0
+```
+
+This illustrative external module must be replaced with a real published module
+whose root package exports `Module`. The initializer imports it and adds a
+`Module{}` registration in `cmd/agent/main.go`. Supply any required backend,
+constructor, or configuration parameters there before building. Dependency
+resolution runs before publication and refuses changes to the requested pins;
+initialization does not compile or apply the agent. Dome's built-in file module
+is already registered. `--module` does not name the project; use
+`--project-module` for that identity.
+
+Without host Go, start this shell in the directory where you want the project,
+then run the bootstrap, build, test, and agent commands inside it:
+
+```sh
+docker run --rm -it \
+  --user "$(id -u):$(id -g)" \
+  --env HOME=/tmp \
+  --volume "$PWD:/workspace" --workdir /workspace \
+  golang:1.26.11-bookworm bash
+```
+
+The bind mount keeps the project on your host; the UID/GID keeps its files owned
+by you. This requires Docker access on Linux and uses temporary container caches.
+Stay in the same mounted project path for subsequent agent runs.
 
 Go resolves main to an immutable v0 pseudo-version, which pins the generated
 dependency and matching assets. Development guides under `/next/` follow main;
@@ -125,11 +162,15 @@ smokes and docs checks. `scripts/install-hugo.sh` downloads the version in
 Docs use a repository-owned responsive Hugo layout with light and dark themes.
 The theme follows the system preference until a reader selects a remembered
 preference. Mobile navigation scrolls independently below the header; guides
-include an on-page contents list. The header version menu lists the published
+include an on-page contents list. Quickstart bootstrap alternatives use Go and
+Docker tabs, with Go selected by default. The header version menu lists the published
 release snapshots during site assembly and marks the current version. Local
 previews list their current version and link to all published versions. Run
 `bash scripts/test-docs-versions.sh` to check the picker templates. Templates live in `docs/layouts/`, with styles
-and navigation behavior in `docs/static/`. In GitHub branch/ruleset settings,
+and navigation behavior in `docs/assets/`. Assets use content fingerprints so
+updated styles and interactions receive fresh URLs. After building docs, run
+`node --test scripts/test-doc-tabs.mjs` for tab interaction regression checks
+(using Node.js in the development environment). In GitHub branch/ruleset settings,
 require `check`, `test-race`, `test-e2e`, `test-integration`,
 `Starter (ubuntu-24.04)`, `Starter (ubuntu-24.04-arm)`, and
 `Documentation and workflow checks`, and `Knowledge and specifications` before merging into `main`. Verify runner

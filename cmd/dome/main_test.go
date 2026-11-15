@@ -12,7 +12,7 @@ import (
 )
 
 func TestInitValidationAndPublication(t *testing.T) {
-	for _, args := range [][]string{{"init"}, {"init", "dest"}, {"init", "dest", "--module", "bad path"}} {
+	for _, args := range [][]string{{"init"}, {"init", "dest"}, {"init", "dest", "--project-module", "bad path"}} {
 		root := command("v0.1.0", func(context.Context, string, map[string][]byte, scaffold.Runner) error {
 			t.Fatal("invalid request published")
 			return nil
@@ -28,7 +28,7 @@ func TestInitValidationAndPublication(t *testing.T) {
 		return nil
 	}, nil)
 	root.SetOut(&bytes.Buffer{})
-	root.SetArgs([]string{"init", "dest", "--module", "example.com/consumer"})
+	root.SetArgs([]string{"init", "dest", "--project-module", "example.com/consumer"})
 	require.NoError(t, root.Execute())
 	require.True(t, called)
 }
@@ -41,7 +41,7 @@ func TestVersionAndDevelopmentBuild(t *testing.T) {
 	require.NoError(t, root.Execute())
 	require.Equal(t, "v0.1.0\n", out.String())
 	root = command("dev", nil, nil)
-	root.SetArgs([]string{"init", "dest", "--module", "example.com/consumer"})
+	root.SetArgs([]string{"init", "dest", "--project-module", "example.com/consumer"})
 	require.Error(t, root.Execute())
 }
 
@@ -98,9 +98,78 @@ func TestDevelopmentConsumerInitialization(t *testing.T) {
 		return nil
 	}, nil)
 	root.SetOut(&bytes.Buffer{})
-	root.SetArgs([]string{"init", "dest", "--module", "example.com/consumer"})
+	root.SetArgs([]string{"init", "dest", "--project-module", "example.com/consumer"})
 	require.NoError(t, root.Execute())
 	require.True(t, called)
 	_, err := scaffold.RenderModule("example.com/demo", "demo", v)
 	require.Error(t, err)
+}
+
+func TestConsumerProjectModuleFlag(t *testing.T) {
+	for _, flag := range []string{"--project-module"} {
+		t.Run(flag, func(t *testing.T) {
+			called := false
+			root := command("v0.1.0", func(_ context.Context, _ string, files map[string][]byte, _ scaffold.Runner) error {
+				called = true
+				require.Contains(t, string(files["go.mod"]), "module example.com/my-machine\n")
+				return nil
+			}, nil)
+			root.SetOut(&bytes.Buffer{})
+			root.SetArgs([]string{"init", "my-machine", flag, "example.com/my-machine"})
+			require.NoError(t, root.Execute())
+			require.True(t, called)
+		})
+	}
+	for _, args := range [][]string{
+		{"init", "my-machine"},
+		{"init", "my-machine", "--project-module", ""},
+		{"init", "my-machine", "--project-module", "bad path"},
+		{"init", "my-machine", "--module", "example.org/one"},
+	} {
+		root := command("v0.1.0", func(context.Context, string, map[string][]byte, scaffold.Runner) error {
+			t.Fatal("invalid request published")
+			return nil
+		}, nil)
+		root.SetArgs(args)
+		require.Error(t, root.Execute())
+	}
+	var help bytes.Buffer
+	root := command("v0.1.0", nil, nil)
+	root.SetOut(&help)
+	root.SetArgs([]string{"init", "--help"})
+	require.NoError(t, root.Execute())
+	require.Contains(t, help.String(), "--project-module")
+	require.Contains(t, help.String(), "--module ")
+}
+
+func TestConsumerModuleDoesNotLeakIntoModuleInit(t *testing.T) {
+	root := commandWithModule("v0.1.0", func(context.Context, string, map[string][]byte, scaffold.Runner) error { return nil }, nil,
+		func(context.Context, string, map[string]scaffold.File, scaffold.Runner) error {
+			t.Fatal("missing module must fail")
+			return nil
+		}, nil)
+	root.SetOut(&bytes.Buffer{})
+	root.SetArgs([]string{"init", "my-machine", "--project-module", "example.org/consumer"})
+	require.NoError(t, root.Execute())
+	root.SetArgs([]string{"module", "init", "--name", "demo"})
+	require.Error(t, root.Execute())
+}
+
+func TestExternalModuleFlags(t *testing.T) {
+	called := false
+	var out bytes.Buffer
+	root := command("v0.1.0", func(_ context.Context, _ string, files map[string][]byte, prepare scaffold.Runner) error {
+		called = true
+		require.NotNil(t, prepare)
+		require.Contains(t, string(files["cmd/agent/main.go"]), "external1.Module{}")
+		require.Contains(t, string(files["cmd/agent/main.go"]), "external2.Module{}")
+		require.Contains(t, string(files["go.mod"]), "example.com/one v1.0.0")
+		require.Contains(t, string(files["go.mod"]), "example.com/two v1.0.0")
+		return nil
+	}, nil)
+	root.SetOut(&out)
+	root.SetArgs([]string{"init", "consumer", "--project-module", "example.com/consumer", "--module", "example.com/one@v1.0.0", "--module", "example.com/two@v1.0.0"})
+	require.NoError(t, root.Execute())
+	require.True(t, called)
+	require.Contains(t, out.String(), "configure required parameters")
 }

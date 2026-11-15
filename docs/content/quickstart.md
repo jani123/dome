@@ -5,7 +5,7 @@ weight: 10
 
 ## Prerequisites
 
-- Linux with Go 1.26.11 or newer.
+- Linux with Go 1.26.11 or newer, or Docker.
 - Module-download access.
 - Permission to access the target machine.
 - Optional: Codex, the initially supported coding agent.
@@ -14,10 +14,10 @@ weight: 10
 
 ### 1. Create the project
 
-```sh
-go run github.com/jani123/dome/cmd/dome@{{< dome-version >}} init my-machine --module example.com/my-machine
-cd my-machine
-```
+{{< bootstrap >}}
+
+`example.com/my-machine` names your new Go project; it does not need to exist
+online.
 
 ### 2. Set the file contents
 

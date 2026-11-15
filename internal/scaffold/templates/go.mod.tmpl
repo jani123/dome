@@ -3,3 +3,6 @@ module {{.Module}}
 go 1.26.11
 
 require github.com/jani123/dome {{.Version}}
+{{range .ExternalModules}}
+require {{.Path}} {{.Version}}
+{{end}}

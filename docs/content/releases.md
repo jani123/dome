@@ -31,3 +31,11 @@ pseudo-version; the generated consumer dependency, skill, templates, and manifes
 all use that same version. Development snapshots are experimental. Use local
 `go doc` for the exact API of a pinned snapshot, since next guides follow main.
 Resource-module initialization continues to require an exact release tag.
+
+Development initializer CLI changes: consumer `init` now requires
+`--project-module` for the new project's Go identity. `--module` instead selects
+an external resource module as `module-path@exact-version` and can be repeated.
+Migrate old consumer creation commands by renaming their identity flag; keep
+`dome module init --module` unchanged. Generated projects are unaffected. External
+root packages must export `Module`; configure any required registration parameters
+in the generated Go before building.

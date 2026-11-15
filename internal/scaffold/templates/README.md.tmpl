@@ -1,6 +1,7 @@
 # Infrastructure agent
 
-Generated with Dome {{.Version}} for module `{{.Module}}`.
+Generated with Dome {{.Version}} for project module `{{.Module}}`.
+This names your project; it does not need to be hosted online.
 Requires Linux, Go 1.26.11+, and optional Codex for conversational authoring.
 Run commands from this project directory. `sandbox/` must remain present.
 
@@ -48,3 +49,15 @@ versions, build instructions, and configuration alongside their binary. Ensure
 they control their repository, deployment credentials, and SOPS keys. Do not
 publish secrets. GPLv3 also permits other compliant source-delivery methods.
 Include Dome's license and applicable dependency notices in redistributed agents.
+
+{{if .ExternalModules}}## External resource modules
+
+The initializer imported and registered these root packages using `Module{}`:
+{{range .ExternalModules}}
+- `{{.Path}}@{{.Version}}` as `{{.Alias}}`.
+{{end}}
+Edit their registrations in `cmd/agent/main.go` to supply any required backend,
+constructor, or configuration parameters before building. The initializer does
+not infer parameters, validate backend readiness, or apply resources. Each root
+package must export a `Module` type implementing Dome's module contract.
+{{end}}

@@ -73,3 +73,46 @@ func testGeneratedConsumer(t *testing.T, version string) {
 	require.NoFileExists(t, filepath.Join(dest, "sandbox/hello.txt"))
 	require.FileExists(t, filepath.Join(dest, "sandbox/unrelated.txt"))
 }
+
+// TestGeneratedExternalModuleConsumer composes a separately generated public module.
+// Local replacements exercise current sources without claiming public availability.
+func TestGeneratedExternalModuleConsumer(t *testing.T) {
+	ctx := context.Background()
+	root := testutil.Root()
+	moduleDir := t.TempDir()
+	moduleFiles, err := scaffold.RenderModule("example.com/widget", "widget", "v0.1.0-rc.1")
+	require.NoError(t, err)
+	prepareModule := func(ctx context.Context, stage string) error {
+		cmd := exec.CommandContext(ctx, "go", "mod", "edit", "-replace=github.com/jani123/dome="+root)
+		cmd.Dir = stage
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(out))
+		return scaffold.Tidy(ctx, stage)
+	}
+	require.NoError(t, scaffold.PublishModule(ctx, moduleDir, moduleFiles, prepareModule))
+	files, err := scaffold.RenderWithModules("example.com/consumer", "v0.1.0-rc.1", []string{"example.com/widget@v0.1.0"})
+	require.NoError(t, err)
+	files["go.mod"] = append(files["go.mod"], []byte("\nreplace github.com/jani123/dome => "+strconv.Quote(root)+"\nreplace example.com/widget => "+strconv.Quote(moduleDir)+"\n")...)
+	dest := filepath.Join(t.TempDir(), "consumer")
+	require.NoError(t, scaffold.Publish(ctx, dest, files, scaffold.WithPinnedDependencies(scaffold.Tidy, files["go.mod"])))
+	run := func(name string, args ...string) string {
+		t.Helper()
+		cmd := exec.CommandContext(ctx, name, args...)
+		cmd.Dir = dest
+		cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(out))
+		return string(out)
+	}
+	run("go", "build", "-o", "agent", "./cmd/agent")
+	run("go", "test", "./...")
+	binary := filepath.Join(dest, "agent")
+	modules := run(binary, "modules")
+	require.Contains(t, modules, "widget")
+	require.Contains(t, modules, "file")
+	run(binary, "init", "--config", "config.yaml", "--non-interactive")
+	require.Contains(t, run(binary, "plan", "--json"), `"create"`)
+	require.NoFileExists(t, filepath.Join(dest, "sandbox/hello.txt"))
+	require.Contains(t, run(binary, "apply", "--json"), `"create"`)
+	require.Contains(t, run(binary, "apply", "--json"), `"no-op"`)
+}

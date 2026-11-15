@@ -47,27 +47,42 @@ func commandWithModule(v string, publish publisher, resolve scaffold.Runner, mod
 	root := &cobra.Command{Use: "dome", Short: "Initialize Go infrastructure agents and resource modules", SilenceUsage: true, SilenceErrors: true}
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return fault.Wrap(fault.Validation, err) })
 	var modulePath string
-	init := &cobra.Command{Use: "init <directory> --module <module-path>", Short: "Create a fresh version-pinned project (never applies resources)", Args: func(cmd *cobra.Command, args []string) error {
+	var external []string
+	init := &cobra.Command{Use: "init <directory> --project-module <module-path>", Short: "Create a fresh version-pinned project (never applies resources)", Args: func(cmd *cobra.Command, args []string) error {
 		return fault.Wrap(fault.Validation, cobra.ExactArgs(1)(cmd, args))
 	}, RunE: func(cmd *cobra.Command, args []string) error {
-		files, err := scaffold.Render(modulePath, v)
+		if modulePath == "" {
+			return fault.New(fault.Validation, "--project-module is required: name the Go module for the project being created")
+		}
+		files, err := scaffold.RenderWithModules(modulePath, v, external)
 		if err != nil {
 			return err
 		}
-		if err := publish(cmd.Context(), args[0], files, resolve); err != nil {
+		prepare := resolve
+		if len(external) > 0 {
+			prepare = scaffold.WithPinnedDependencies(resolve, files["go.mod"])
+		}
+		if err := publish(cmd.Context(), args[0], files, prepare); err != nil {
 			return err
+		}
+		if len(external) > 0 {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "External modules registered as Module{}; configure required parameters in cmd/agent/main.go before building."); err != nil {
+				return err
+			}
 		}
 		_, err = fmt.Fprintln(cmd.OutOrStdout(), "Created project. Open it in Codex; see README.md for build and plan commands.")
 		return err
 	}}
-	init.Flags().StringVar(&modulePath, "module", "", "Go module path for the consumer (required)")
-	// Render validates the required module before any publication.
+	init.Flags().StringVar(&modulePath, "project-module", "", "Go module identity of the project being created (required; need not be hosted)")
+	init.Flags().StringArrayVar(&external, "module", nil, "External root Go module to import and register as Module{}: path@version (repeatable; configure parameters in generated Go)")
+	// Resource modules retain their existing flag and separate storage.
+	var resourceModulePath string
 	var resourceName string
 	moduleCmd := &cobra.Command{Use: "module", Short: "Develop standalone resource modules"}
 	moduleInit := &cobra.Command{Use: "init --module <go-module-path> --name <name>", Short: "Initialize the current empty directory as a resource-module repository", Args: func(cmd *cobra.Command, args []string) error {
 		return fault.Wrap(fault.Validation, cobra.NoArgs(cmd, args))
 	}, RunE: func(cmd *cobra.Command, _ []string) error {
-		files, err := scaffold.RenderModule(modulePath, resourceName, v)
+		files, err := scaffold.RenderModule(resourceModulePath, resourceName, v)
 		if err != nil {
 			return err
 		}
@@ -77,7 +92,7 @@ func commandWithModule(v string, publish publisher, resolve scaffold.Runner, mod
 		_, err = fmt.Fprintln(cmd.OutOrStdout(), "Created module repository. Run task dev:setup and task check; see README.md.")
 		return err
 	}}
-	moduleInit.Flags().StringVar(&modulePath, "module", "", "External Go module path (required)")
+	moduleInit.Flags().StringVar(&resourceModulePath, "module", "", "External Go module path (required)")
 	moduleInit.Flags().StringVar(&resourceName, "name", "", "Importable lowercase package and resource identity (required)")
 	moduleCmd.AddCommand(moduleInit)
 	root.AddCommand(moduleCmd)
