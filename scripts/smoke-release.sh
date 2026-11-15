@@ -15,6 +15,8 @@ cd "$stage/consumer"
 test "$(go list -m -f '{{if .Replace}}replacement{{else}}{{.Version}}{{end}}' github.com/jani123/dome)" = "$version"
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...
+./agent init --config config.yaml --non-interactive
+test ! -e .dome/state.db
 ./agent plan --json > "$stage/plan.json"
 test ! -e sandbox/hello.txt
 ./agent apply --json > "$stage/apply.json"
