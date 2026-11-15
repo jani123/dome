@@ -12,8 +12,8 @@ containers do not run systemd. Never replace failed real dependencies with stubs
 
 Optional devcontainer: `task devcontainer:up`, `task devcontainer:shell`,
 `task devcontainer:check`. Root tasks work on the host without Devbox.
-Run `task devcontainer:exec -- task docs:serve` and discover the assigned host port
-with `task devcontainer:urls`. Rebuild for initial port mapping; mappings do not
+Hugo starts automatically with the devcontainer. Discover the assigned host port
+with `task devcontainer:urls`; inspect `.build/docs-preview.log` for startup failures. Rebuild for initial port mapping; mappings do not
 prove the server is running. Remote Docker hosts require access/tunnelling.
 
 Run `task specs:setup` to intentionally refresh the seven pinned OpenSpec workflows;

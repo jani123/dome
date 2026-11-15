@@ -22,6 +22,9 @@ func TestRenderModule(t *testing.T) {
 	for _, path := range []string{"resource.go", "Taskfile.yml", ".devcontainer/compose.yaml", ".devcontainer/devcontainer-lock.json", "devbox.lock", "docs/hugo.toml", "tests/e2e/e2e_test.go", "tests/integration/integration_test.go", ".agents/skills/dome-module/SKILL.md", ".agents/skills/openspec-verify-change/SKILL.md"} {
 		require.Contains(t, files, path)
 	}
+	require.Contains(t, string(files["go.mod"].Data), "go 1.26.11")
+	require.Contains(t, string(files[".devcontainer/devcontainer.json"].Data), `"postStartCommand": "bash .devcontainer/start-docs.sh"`)
+	require.Contains(t, string(files[".devcontainer/start-docs.sh"].Data), "devbox run -- task docs:serve")
 	require.Contains(t, string(files[".devcontainer/proxy/squid.conf"].Data), "visible_hostname demo-egress")
 	require.NotContains(t, files, "Makefile")
 	require.NotContains(t, files, "sandbox/.gitkeep")

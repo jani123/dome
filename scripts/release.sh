@@ -22,7 +22,7 @@ go mod vendor -o "$source_dir/vendor"
 cat > "$source_dir/BUILD-SOURCE.md" <<BUILD
 # Build this release from corresponding source
 
-Requires Go 1.26+ on Linux. All Go module sources used by this checkout are
+Requires Go 1.26.11+ on Linux. All Go module sources used by this checkout are
 included under vendor with their upstream license and attribution material.
 
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -ldflags "-s -w -X main.version=$version" -o dome ./cmd/dome

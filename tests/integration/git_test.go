@@ -198,6 +198,13 @@ var (
 			} else {
 				args = append(args, "--git-url", "ssh://git@gitserver:2222/srv/git/configuration.git", "--ssh-key", "/data/git.key", "--known-hosts", "/data/known_hosts")
 			}
+			initArgs := append([]string{"--workspace", "/data", "init", "--non-interactive"}, args[1:]...)
+			initCode, initOut, initErr := agentContainer.Agent(ctx, initArgs...)
+			Expect(initErr).NotTo(HaveOccurred())
+			Expect(initCode).To(Equal(0), initOut)
+			// Subsequent invocations load source and transport settings from the
+			// saved host profile, including after a container restart.
+			args = []string{"--workspace", "/data", "apply"}
 			apply := func(extra ...string) (int, string) {
 				code, out, err := agentContainer.Agent(ctx, append(append([]string{}, args...), extra...)...)
 				Expect(err).NotTo(HaveOccurred())
@@ -210,7 +217,7 @@ var (
 				return out
 			}
 			status := func() string {
-				code, out, err := agentContainer.Agent(ctx, "status")
+				code, out, err := agentContainer.Agent(ctx, "--workspace", "/data", "status")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(code).To(Equal(0), out)
 				return out
@@ -257,8 +264,11 @@ var (
 			Expect(err).NotTo(HaveOccurred())
 			Expect(agentContainer.CopyToContainer(ctx, []byte(hostKey), "/data/age.key", 0o600)).To(Succeed())
 			secretCommit := push(map[string][]byte{"config.yaml": []byte("content: with-secrets\nversion: '3'\n"), "secrets.yaml": encrypted})
-			secretArgs := append(append([]string{}, args...), "--secrets", "secrets.yaml")
-			envArgs := append([]string{"env", "SOPS_AGE_KEY_FILE=/data/age.key", "agent", "--state", "/data/state.db", "--json"}, secretArgs...)
+			// Deliberately add the encrypted blob reference to the host profile;
+			// later apply commands supply no source, state or secret flags.
+			savedProfile := read("/data/.dome/agent.yaml") + "\nsecrets: secrets.yaml\n"
+			Expect(agentContainer.CopyToContainer(ctx, []byte(savedProfile), "/data/.dome/agent.yaml", 0o600)).To(Succeed())
+			envArgs := []string{"env", "SOPS_AGE_KEY_FILE=/data/age.key", "agent", "--workspace", "/data", "--json", "apply"}
 			code, out, err = testutil.Exec(ctx, agentContainer.Container, envArgs...)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(code).To(Equal(0), out)

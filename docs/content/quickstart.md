@@ -5,7 +5,7 @@ weight: 10
 
 ## Prerequisites
 
-Use Linux with Go 1.26 or newer. Codex is the initially supported optional coding
+Use Linux with Go 1.26.11 or newer. Codex is the initially supported optional coding
 agent. You need module-download access and permission to access the target machine.
 The starter manages a local sandbox and needs no root permissions.
 
@@ -19,6 +19,7 @@ go run github.com/jani123/dome/cmd/dome@{{< dome-version >}} init my-machine --m
 cd my-machine
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...
+./agent init --config config.yaml --non-interactive
 ./agent plan --json
 ```
 

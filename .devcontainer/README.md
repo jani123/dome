@@ -1,11 +1,18 @@
 # Dome development container
 
 This follows Stoca's Devbox and Docker Compose setup, with Go tooling only.
-Devbox supplies Go 1.25, gopls, Delve, gofumpt, Task, Git and ripgrep.
+Devbox supplies Go 1.25 as a bootstrap, plus gopls, Delve, gofumpt, Task, Git
+and ripgrep. Automatic Go toolchain selection uses the Go 1.26.11+ minimum in
+go.mod. Keep automatic selection enabled, or provide a compiler satisfying that
+minimum explicitly.
 The image installs Codex 0.162.0 with Node/npm, matching Stoca, and
 [Hunk](https://github.com/modem-dev/hunk) 0.25.0 using its checksum-verified
 standalone installer. Run `hunk diff` in the checkout to review changes.
 The image also installs Bat, available as `bat` (and Debian's `batcat`).
+It installs [broot](https://github.com/Canop/broot/releases/tag/v1.62.0) 1.62.0
+from the SHA-256-verified upstream archive, using precompiled Linux amd64/arm64
+musl binaries. Run `broot` to browse files; run `broot --install` as the workspace
+user to set up the optional `br` shell function for directory navigation.
 Python and application-specific servers are not installed.
 
 The Git integration suite builds its own small HTTP/SSH server image from
@@ -117,16 +124,19 @@ third-party memory service. See [the maintainer workflow](../docs/development.md
 
 ## Local documentation preview
 
-Rebuild once to apply the docs port mapping, then start Hugo in a host terminal:
+The Dev Container post-start hook launches Hugo automatically, including after
+container restarts, and waits for an HTTP response. Rebuild/reopen the container
+after pulling this lifecycle change. Run `task devcontainer:urls` on the host and
+open the reported Docs URL. Docker assigns an available localhost port, allowing
+multiple workspaces to run concurrently. Hugo listens on container port 1313;
+live reload is disabled. Repeated hooks reuse the running server through a
+container-local process lock. Startup failures fail the hook; inspect
+`.build/docs-preview.log` inside the workspace. To retry without reopening, run
+`bash .devcontainer/start-docs.sh` inside the container.
 
-```sh
-task devcontainer:exec -- task docs:serve
-```
-
-In another host terminal, run `task devcontainer:urls` and open the reported Docs
-URL. Docker assigns an available localhost port, allowing multiple workspaces
-to run concurrently. Hugo listens on container port 1313; live reload is disabled.
-`task docs:build` builds and checks the static guides without serving them.
+`task docs:serve` remains available for foreground serving outside the automatic
+lifecycle (stop the background server first if using the same port).
+`task docs:build` builds and checks static guides without serving them.
 
 URL discovery reads current workspace mappings without starting containers.
 A mapping is not a readiness check: Hugo must be running. Recreated workspaces

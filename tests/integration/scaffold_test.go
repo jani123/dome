@@ -38,6 +38,8 @@ func TestGeneratedConsumer(t *testing.T) {
 	run("go", "build", "-o", "agent", "./cmd/agent")
 	run("go", "test", "./...")
 	binary := filepath.Join(dest, "agent")
+	require.Contains(t, run(binary, "init", "--config", "config.yaml", "--non-interactive"), "Workspace initialized")
+	require.NoFileExists(t, filepath.Join(dest, ".dome/state.db"))
 	require.Contains(t, run(binary, "plan", "--json"), `"create"`)
 	require.NoFileExists(t, filepath.Join(dest, "sandbox/hello.txt"))
 	require.Contains(t, run(binary, "apply", "--json"), `"create"`)

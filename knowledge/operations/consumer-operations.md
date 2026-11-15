@@ -12,6 +12,12 @@ sources:
     resource: ../../cli/timing_test.go
   - id: source-4
     resource: ../../agent/agent.go
+  - id: workspace
+    resource: ../../cli/workspace.go
+  - id: profile
+    resource: ../../workspace/profile.go
+  - id: profile-store
+    resource: ../../workspace/store.go
   - id: source-5
     resource: ../../core/fault/fault.go
 ---
@@ -19,6 +25,16 @@ sources:
 # Consumer CLI
 
 The compiled CLI can observe plans, reconcile, inspect durable execution history, and run or resume workflows without an AI runtime. A JSON plan reflects a fresh observation; persisted status is historical evidence, not a host probe. Polling exits on reconciliation failure so a supervisor can report and restart it. Error boundaries preserve specific causes/categories without adding secrets.
+
+Compiled-agent init creates a host runtime profile, distinct from developer
+source-repository generation. It saves source/state settings and credential-file
+references without opening SQLite or evaluating resource topology. Git-backed
+hosts retain resource configuration in Git. Runtime commands use saved defaults;
+explicit overrides do not rewrite profiles. Setup flags are visible on init and
+hidden on runtime help. Profiles resolve host paths against the selected workspace
+without changing consumer Go resource paths. Invalid profiles block execution;
+metadata/help commands remain available. See the
+[runtime profile guide](../../docs/content/configuration.md#runtime-profile).
 
 ## Boundary
 

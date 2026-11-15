@@ -24,7 +24,14 @@ Restrict key/state permissions. Run with only the permissions the resources need
 The sandbox starter uses relative paths, so set its working directory explicitly.
 For real deployments, prefer explicit stable absolute resource/state paths.
 
-Supervise `agent run --interval 30s` with systemd or another host supervisor.
+Run `agent init` once in the stable working directory, or provision a complete
+runtime profile with `agent init --agent-config settings.yaml --non-interactive`.
+The managed host saves only runtime settings and credential-file references;
+Git-backed resource configuration stays in its existing repository. Select the
+existing SQLite path when adopting this workflow on an already managed host.
+Initialization never resets or migrates execution history.
+
+Supervise `agent --workspace /path/to/workspace run --interval 30s` with systemd or another host supervisor.
 A reconciliation failure exits; configure restart/reporting behavior deliberately.
 There is no embedded webhook service or automatic host rollback. Never let two
 state databases manage the same host resources. Preserve SQLite across restarts.

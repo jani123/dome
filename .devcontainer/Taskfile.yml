@@ -56,6 +56,7 @@ tasks:
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" devbox run -- task doctor
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" codex --version
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" hunk --version
+      - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" broot --version
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" docker info
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" docker buildx version
       - env -u LD_LIBRARY_PATH "{{.DEVCONTAINER}}" exec --workspace-folder "{{.ROOT_DIR}}" docker compose version

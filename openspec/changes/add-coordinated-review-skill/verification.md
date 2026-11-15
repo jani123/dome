@@ -52,3 +52,25 @@ The network blocker is resolved; the security gate is failing, not blocked or
 passing. Dependency/toolchain remediation is separate work; no dependencies were
 changed or scanner findings suppressed during this retry. Task 3.4 remains open.
 Raw scanner output remains in ignored local storage.
+
+## Compiler and dependency remediation (2026-11-14)
+
+The earlier failing scan remains historical evidence. After the authorized
+routine security updates, the effective compiler and module minimum are Go
+1.26.11, gRPC resolves to 1.83.1, and the aligned OpenTelemetry API/SDK family
+resolves to 1.45.0. Both initializer templates use the same patched Go minimum.
+No advisory suppressions or alternate database sources were added.
+
+The independent verification role ran the current project checks: check, race,
+full compiled-agent E2E, full real-boundary/Git integration, static, security,
+artifacts, docs and workflow. All passed. Govulncheck reports zero reachable
+vulnerabilities, plus one imported-package advisory and three module-only
+advisories without observed calls. This is a scanner result, not proof that all
+possible vulnerabilities are absent. A generated standalone module using an
+explicit local Dome replacement passed its real suites and the same reachable
+security gate. No public release acceptance is implied.
+
+Task 3.4 is now complete. Logs and command/version/time/exit evidence remain in
+ignored `.build/notes/reviews/agent-workspace/final-checks/`; current feature
+verification is recorded in
+[initialize-agent-workspace](../initialize-agent-workspace/verification.md).

@@ -37,7 +37,7 @@ func (c *pollingClock) Sleep(ctx context.Context, d time.Duration) error {
 func TestRunPollsWithInjectedTime(t *testing.T) {
 	backend := &pollingBackend{}
 	clock := &pollingClock{}
-	cmd := newWithClock(backend, clock)
+	cmd := newWithClock(backend, clock, WithWorkspaceStore(&memoryWorkspace{}))
 	cmd.SetOut(io.Discard)
 	cmd.SetArgs([]string{"run", "--interval", "1h"})
 	err := cmd.ExecuteContext(context.Background())

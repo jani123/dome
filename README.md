@@ -21,7 +21,7 @@ go test ./...
 ./agent apply --json
 ```
 
-Use Linux amd64/arm64 and Go 1.26+. Native release smoke tests gate platform
+Use Linux amd64/arm64 and Go 1.26.11+. Native release smoke tests gate platform
 claims. Open Codex in the project and ask it to use the `dome` skill. Adding a Go
 dependency alone does not install skills. The compiled consumer runs without AI.
 Generate a fresh subdirectory when adding to an existing project; the initializer
@@ -63,7 +63,7 @@ and check-gated draft source-release workflows. `main`, keywords, unsafe names,
 and v2+ import paths are refused. Generation prepares pinned tools/dependencies
 in staging; it does not run tests, Docker, an agent, Git, or remote publishing.
 
-Use `task docs:serve` in its devcontainer and `task devcontainer:urls` on the host
+Its devcontainer starts Hugo automatically; use `task devcontainer:urls` on the host
 for the random-loopback docs preview. Adapt the test-only file backend and Debian
 fixture to your real domain; their success is not production backend support.
 After interrupted or partly failed publication, inspect the retained output or
@@ -137,7 +137,7 @@ See [compatibility/support policy](docs/content/releases.md),
 [customer licensing](docs/content/licensing.md), and
 [dependency review](docs/DEPENDENCY_REVIEW.md).
 
-Local preview: run `task docs:serve` in the devcontainer and
+Local preview: Hugo starts automatically with the devcontainer; run
 `task devcontainer:urls` on the host to find its randomly assigned localhost URL.
 Existing containers need `task devcontainer:rebuild` once for the port mapping.
 See the [preview guide](.devcontainer/README.md#local-documentation-preview).
@@ -174,15 +174,16 @@ notes or CI results rather than committing agent progress documents.
 
 ## Build and try the example
 
-Use Linux and Go 1.26 or newer. `go.mod` pins dependency versions; Go 1.25 with automatic toolchain downloads enabled can bootstrap the required toolchain. Docker is needed only for container tests.
+Use Linux and Go 1.26.11 or newer. `go.mod` pins dependency versions; Go 1.25 with automatic toolchain downloads enabled can bootstrap the required toolchain. Docker is needed only for container tests.
 
 ```sh
 task build
 mkdir -p /tmp/dome-example
 printf 'content: hello\nversion: "1"\n' > .build/config.yaml
-.build/agent --state .build/example.db --config .build/config.yaml plan --json
-.build/agent --state .build/example.db --config .build/config.yaml apply --json
-.build/agent --state .build/example.db status
+.build/agent init --non-interactive --state .build/example.db --config .build/config.yaml
+.build/agent plan --json
+.build/agent apply --json
+.build/agent status
 ```
 
 The example manages `/tmp/dome-example/managed.txt` and optionally `version.txt`. Set `root` in configuration to an existing absolute directory, or set `DOME_ROOT`. Parent directories must already exist. File permissions are explicit: `0640` for the managed file and `0600` for the version file. `managed: false` removes the managed file from desired state, exercising ownership-based pruning. `fail_transition: true` demonstrates a failed version transition.
@@ -276,22 +277,26 @@ Register with `agent.WithPlaybooks(book)`. Every step needs `Observe`, `Apply`, 
 A resource can implement `resource.Transition` to select a registered playbook instead of its default apply operation. Without a selected playbook, it must explicitly declare its default transition safe. This also applies to deletion handles during pruning. The reconciler durably links the resource identity, target snapshot, playbook, and execution ID before side effects, holds the database guard through the workflow, and verifies the final resource state before persisting it. An unfinished DAG is resumed even if the resource already matches its target. Changing or removing that target is blocked until its original transition completes. Interrupted pruning workflows also resume after the file has already disappeared. The example's `demo-version` resource demonstrates this mechanism; PostgreSQL is not implemented.
 
 ```sh
-DOME_ROOT=/tmp/dome-example .build/agent --state .build/example.db playbook list
-DOME_ROOT=/tmp/dome-example .build/agent --state .build/example.db playbook run parallel-demo
-.build/agent --state .build/example.db operations list
-.build/agent --state .build/example.db operations inspect EXECUTION_ID
-.build/agent --state .build/example.db playbook run parallel-demo --resume EXECUTION_ID
+DOME_ROOT=/tmp/dome-example .build/agent playbook list
+DOME_ROOT=/tmp/dome-example .build/agent playbook run parallel-demo
+.build/agent operations list
+.build/agent operations inspect EXECUTION_ID
+.build/agent playbook run parallel-demo --resume EXECUTION_ID
 ```
 
 ## Configuration from Git and SOPS
 
+Use a distinct set of resource targets for a separate workspace, or reuse the existing workspace and state when changing its source; never let two state databases own the same resources.
+
 Git sources support SSH with a private key and a verified `known_hosts` file, or public HTTPS. Unencrypted HTTP requires `config.GitOptions.AllowHTTP` or the CLI flag `--git-allow-http`. Set the repository-relative configuration path and branch, tag, or reachable commit. Fetching an explicit branch works even if the server's default branch is unborn. Retrieval reads committed blobs into memory without a checkout.
 
 ```sh
-.build/agent --state .build/git.db apply --json \
+.build/agent --workspace .build/git-workspace init --non-interactive \
   --git-url ssh://git@git.example.com:23231/configuration \
   --git-ref main --git-path config.yaml \
   --ssh-key /etc/dome/git.key --known-hosts /etc/dome/known_hosts
+.build/agent --workspace .build/git-workspace plan --json
+.build/agent --workspace .build/git-workspace apply --json
 ```
 
 Obtain the server's host public key through a trusted channel before creating `known_hosts`. SSH host verification is mandatory. Private HTTPS authentication, encrypted SSH private keys, submodules, and Git LFS configuration blobs are not supported in this slice. Retrieval currently fetches branch/tag history afresh in memory, so configuration repositories should be small.
@@ -299,8 +304,8 @@ Obtain the server's host public key through a trusted channel before creating `k
 SOPS uses its Go decryption API and the normal host key environment, such as `SOPS_AGE_KEY_FILE=/etc/dome/age.key`. Secrets are decoded into a separate user-defined Go struct. The example accepts a `token` field to exercise loading but does not write it to its managed file.
 
 ```sh
-SOPS_AGE_KEY_FILE=/etc/dome/age.key .build/agent apply \
-  --state .build/example.db --config .build/config.yaml --secrets secrets.enc.yaml
+# Set secrets: secrets.enc.yaml in the existing local workspace profile first.
+SOPS_AGE_KEY_FILE=/etc/dome/age.key .build/agent apply
 ```
 
 With `--git-url`, `--secrets secrets.enc.yaml` is a path inside the selected commit. Retrieval, decryption, and validation failures abort before reconciliation or pruning. Reconciliation failures retain the last successfully applied overall revision.
@@ -309,9 +314,20 @@ With `--git-url`, `--secrets secrets.enc.yaml` is a path inside the selected com
 
 ## CLI
 
-Use `--help` on any command. Plans and operation status support JSON; status and listings already print JSON. Exit codes are `0` for success, `2` for validation/configuration failure, and `1` for execution failure.
+Run `agent init` once to create `.dome/agent.yaml` with source and state settings.
+It prompts for missing settings on a terminal; complete flags or `--agent-config`
+support unattended setup. Use `--workspace` to select a different directory.
+Git-backed setup creates no resource configuration or repository on the host.
+See the [runtime profile guide](docs/content/configuration.md#runtime-profile)
+for schema, path rules, permissions, repeat setup and compatibility overrides.
+Existing state must be retained; initialization does not open or reset SQLite.
+
+Use `--help` on any command. Setup flags are shown only on `init`; runtime help
+uses workspace/profile selection. Legacy overrides remain accepted but hidden.
+Plans and operation status support JSON; status and listings already print JSON. Exit codes are `0` for success, `2` for validation/configuration failure, and `1` for execution failure.
 
 ```text
+agent init [--non-interactive]
 agent run [--interval 30s]
 agent plan [--json]
 agent apply [--json]
@@ -372,6 +388,7 @@ GPLv3 itself also allows other compliant source-delivery methods.
 - `core/resource`, `core/registry`, `core/reconcile`: resource contracts, registration, planning, verification, and ownership pruning.
 - `core/state`, `core/playbook`, `core/dag`, `core/fault`: SQLite, typed graphs, execution/recovery, contextual errors.
 - `modules/file`, `modules/systemd`: initial infrastructure modules.
+- `workspace`: non-secret runtime profiles and safe host setup storage.
 - `examples/basic-agent`: compiled consumer and demonstration transition resource.
 - `tests/e2e`, `tests/integration`: independent container suites.
 

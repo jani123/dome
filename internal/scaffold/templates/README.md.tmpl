@@ -1,12 +1,13 @@
 # Infrastructure agent
 
 Generated with Dome {{.Version}} for module `{{.Module}}`.
-Requires Linux, Go 1.26+, and optional Codex for conversational authoring.
+Requires Linux, Go 1.26.11+, and optional Codex for conversational authoring.
 Run commands from this project directory. `sandbox/` must remain present.
 
 ```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...
+./agent init --config config.yaml --non-interactive
 ./agent plan --json
 # When you want to apply the inspected changes:
 ./agent apply --json

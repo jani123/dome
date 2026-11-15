@@ -4,6 +4,8 @@ title: "Configuration sources"
 description: "Go defines topology while typed YAML and SOPS supply values without persisting secrets."
 generated: {by: codex/2026-11-13, at: "2026-11-13T07:03:33Z"}
 sources:
+  - id: runtime-profile
+    resource: ../../workspace/profile.go
   - id: source-1
     resource: ../../config/config.go
   - id: source-2
@@ -21,6 +23,14 @@ sources:
 # Configuration sources
 
 Typed configuration keeps domain choices in consumer Go instead of introducing another infrastructure language. Source retrieval and decryption must finish successfully before reconciliation can make pruning decisions. Git reads committed blobs into memory, requires SSH host verification, and requires deliberate opt-in for plain HTTP. Keys remain on the host and decrypted values stay ephemeral.
+
+Host bootstrap settings use a separate versioned runtime profile, not the typed
+resource YAML or SQLite state. This lets managed hosts reuse Git/source settings
+without creating a resource repository or persisting credential contents. Init
+checks local references; successful setup is not proof of remote connectivity or
+valid/decryptable committed resource configuration. The profile's authority and
+precedence are documented in the
+[configuration guide](../../docs/content/configuration.md#runtime-profile).
 
 ## Boundary
 

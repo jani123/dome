@@ -49,29 +49,27 @@ type clock interface {
 }
 
 // New constructs commands for an injectable backend without running them.
-func New(b Backend) *cobra.Command { return newWithClock(b, dag.RealClock{}) }
+func New(b Backend) *cobra.Command { return NewWithOptions(b) }
 
-func newWithClock(b Backend, clock clock) *cobra.Command {
+// NewWithOptions constructs commands with explicitly injected CLI boundaries.
+func NewWithOptions(b Backend, options ...CommandOption) *cobra.Command {
+	return newWithClock(b, dag.RealClock{}, options...)
+}
+
+func newWithClock(b Backend, clock clock, options ...CommandOption) *cobra.Command {
+	settings := defaultSettings()
+	for _, option := range options {
+		if option != nil {
+			option(&settings)
+		}
+	}
 	var o Options
 	root := &cobra.Command{Use: "agent", Short: "Reconcile infrastructure and execute durable playbooks", SilenceErrors: true, SilenceUsage: true, Args: groupArgs, RunE: groupHelp}
 	flags := root.PersistentFlags()
-	flags.StringVar(&o.StatePath, "state", "", "SQLite state database path")
-	flags.StringVar(&o.LocalPath, "config", "", "Local typed YAML configuration file")
-	flags.StringVar(&o.SecretsPath, "secrets", "", "SOPS YAML secrets file (repository-relative with --git-url)")
-	flags.StringVar(&o.Git.URL, "git-url", "", "Configuration repository URL (ssh://, https://, or explicitly enabled http://)")
-	flags.BoolVar(&o.Git.AllowHTTP, "git-allow-http", false, "Allow unencrypted HTTP configuration retrieval")
-	flags.StringVar(&o.Git.Ref, "git-ref", "HEAD", "Configuration commit, tag, or branch")
-	flags.StringVar(&o.Git.Path, "git-path", "config.yaml", "Repository-relative configuration path")
-	flags.StringVar(&o.Git.SSHKey, "ssh-key", "", "SSH private key for configuration retrieval")
-	flags.StringVar(&o.Git.KnownHosts, "known-hosts", "", "SSH known_hosts file for host verification")
+	bindSetup(root, &o, true)
 	flags.BoolVar(&o.JSON, "json", false, "Print machine-readable JSON")
 	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error { return fault.Wrap(fault.Validation, err) })
-	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if o.Git.URL != "" && o.LocalPath != "" {
-			return fault.New(fault.Validation, "choose either --config or --git-url")
-		}
-		return nil
-	}
+	attachWorkspace(root, &o, settings)
 	showPlan := func(cmd *cobra.Command, p *reconcile.Plan) error {
 		if o.JSON {
 			return output(cmd.OutOrStdout(), p)

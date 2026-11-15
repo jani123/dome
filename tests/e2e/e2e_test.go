@@ -53,6 +53,47 @@ var (
 			Expect(code).To(Equal(0), out)
 			return out
 		}
+		It("initializes host settings once and preserves history on repeated or failed setup", func(ctx SpecContext) {
+			put(ctx, "content: initialized\n")
+			invoke := func(args ...string) (int, string) {
+				code, out, err := testutil.Exec(ctx, c.Container, append([]string{"agent", "--workspace", "/data", "--json"}, args...)...)
+				Expect(err).NotTo(HaveOccurred())
+				return code, out
+			}
+			code, out := invoke("init", "--config", "config.yaml", "--non-interactive")
+			Expect(code).To(Equal(0), out)
+			code, _, err := testutil.Exec(ctx, c.Container, "test", "!", "-e", "/data/.dome/state.db")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(0))
+			profile := read(ctx, "/data/.dome/agent.yaml")
+			for _, args := range [][]string{{"plan"}, {"apply"}, {"apply"}} {
+				code, out = invoke(args...)
+				Expect(code).To(Equal(0), out)
+			}
+			Expect(out).To(ContainSubstring("no-op"))
+			code, out, err = testutil.Exec(ctx, c.Container, "sh", "-c", "cd /tmp && agent --workspace /data status --json")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(0), out)
+			Expect(out).To(ContainSubstring("managed.txt"))
+			Expect(read(ctx, "/data/managed.txt")).To(Equal("initialized"))
+			beforeCode, before := invoke("operations", "list")
+			Expect(beforeCode).To(Equal(0), before)
+			code, out = invoke("init", "--non-interactive")
+			Expect(code).To(Equal(0), out)
+			code, out = invoke("init", "--git-url", "https://example.com/different", "--non-interactive")
+			Expect(code).To(Equal(2), out)
+			Expect(read(ctx, "/data/.dome/agent.yaml")).To(Equal(profile))
+			code, out = invoke("operations", "list")
+			Expect(code).To(Equal(0), out)
+			Expect(out).To(Equal(before))
+			code, out = invoke("status")
+			Expect(code).To(Equal(0), out)
+			Expect(out).To(ContainSubstring("managed.txt"))
+			Expect(c.CopyToContainer(ctx, []byte("schema_version: 999\n"), "/data/.dome/agent.yaml", 0o600)).To(Succeed())
+			code, out = invoke("apply")
+			Expect(code).To(Equal(2), out)
+			Expect(read(ctx, "/data/managed.txt")).To(Equal("initialized"))
+		})
 		It("creates, updates, detects no-op, prunes, and preserves unrelated files", func(ctx SpecContext) {
 			Expect(c.CopyToContainer(ctx, []byte("keep"), "/data/unrelated", 0o600)).To(Succeed())
 			put(ctx, "content: first\n")

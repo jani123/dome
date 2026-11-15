@@ -60,6 +60,16 @@ The devcontainer SHALL publish Hugo container port 1313 on a dynamically assigne
 - **WHEN** a contributor starts the devcontainer Hugo server and requests workspace URLs on the host
 - **THEN** discovery reports the current mapped docs URL and guides are reachable there
 
+#### Scenario: Start and restart the docs preview
+
+- **WHEN** the devcontainer starts or restarts
+- **THEN** its post-start hook starts Hugo in the background and reports success only after HTTP readiness, or fails with diagnostic log guidance
+
+#### Scenario: Repeated startup hook
+
+- **WHEN** the post-start hook runs again while its Hugo server is running
+- **THEN** it reuses that server without starting a competing instance
+
 #### Scenario: Workspace is stopped
 
 - **WHEN** no matching workspace is running

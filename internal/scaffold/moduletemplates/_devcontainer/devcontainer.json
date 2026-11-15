@@ -21,6 +21,7 @@
     "source=module-npm-${devcontainerId},target=/home/devbox/.local/npm,type=volume"
   ],
   "postCreateCommand": "bash .devcontainer/prepare.sh",
+  "postStartCommand": "bash .devcontainer/start-docs.sh",
   "customizations": {
     "vscode": {
       "extensions": ["jetpack-io.devbox", "golang.go"],

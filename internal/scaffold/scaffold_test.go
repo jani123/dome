@@ -55,3 +55,9 @@ func TestInvalidInput(t *testing.T) {
 	}
 	require.Error(t, scaffold.CheckVersion("v0.1.0", []byte("invalid")))
 }
+
+func TestPatchedGoBaseline(t *testing.T) {
+	files, err := scaffold.Render("example.com/consumer", "v0.1.0")
+	require.NoError(t, err)
+	require.Contains(t, string(files["go.mod"]), "go 1.26.11")
+}

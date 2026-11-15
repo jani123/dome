@@ -19,7 +19,7 @@
 - [x] 3.1 Forward-test the skill through an independent coordinator in an isolated disposable repository with a realistic implementation and plan; verify five separate specialist agents return schema-valid reports within available slots, the aggregate preserves their identities/provenance, and real commands run once under the verification owner.
 - [x] 3.2 Exercise a flawed fixture containing an implementation defect, architecture boundary violation, security issue, plan mismatch and unformatted new Go file; verify evidence-backed findings, unchanged source/task state, and an explicitly non-passing result. Do not give evaluating agents the expected findings.
 - [x] 3.3 Exercise a clean fixture, unavailable Docker/tooling, interrupted specialist and changed input state; verify honest passed/blocked/incomplete/stale reporting, malformed-report correction and failure handling, aggregate/Markdown consistency, no fabricated findings or passes, and no unrelated source mutation.
-- [ ] 3.4 Run the applicable project Go/tooling, workflow, docs and artifact checks for the delivered skill/check changes; preserve actual logs in ignored storage and record only durable scoped verification evidence in OpenSpec.
+- [x] 3.4 Run the applicable project Go/tooling, workflow, docs and artifact checks for the delivered skill/check changes; preserve actual logs in ignored storage and record only durable scoped verification evidence in OpenSpec.
 
 ## Workflow follow-up
 

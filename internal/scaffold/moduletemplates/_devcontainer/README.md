@@ -1,7 +1,12 @@
 # Development container
 
-Devbox tools, non-root workspace, Docker-in-Docker, bat/Hunk and optional Codex
-follow the source Dome developer environment. Host Docker and Dev Container CLI
+Devbox supplies Go 1.25 as a bootstrap; automatic toolchain selection uses the
+Go 1.26.11+ minimum in go.mod. Keep automatic selection enabled or provide a
+sufficient compiler explicitly. Devbox tools, non-root workspace,
+Docker-in-Docker, bat/Hunk and optional Codex
+follow the source Dome developer environment. broot 1.62.0 is installed from
+SHA-256-verified precompiled Linux amd64/arm64 binaries. Run `broot` or `broot --install` to set up the `br` shell
+function. Host Docker and Dev Container CLI
 are required. Docker-in-Docker is privileged; this is not a hardened isolation
 boundary. Credentials and sessions belong in ignored local storage.
 
