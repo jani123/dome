@@ -41,7 +41,7 @@ Evidence: [scripts/build-site.sh](../../../scripts/build-site.sh).
 
 ### Requirement: Trusted Pages deployment
 
-Pages deployment SHALL use trusted main source, a successful build artifact, explicit deployment permissions, and the github-pages environment; PR checks SHALL not publish.
+Pages deployment SHALL use trusted main source, a successful build artifact, explicit deployment permissions, and the github-pages environment; PR checks SHALL not publish. The Pages environment SHALL accept main and published version-tag event refs while source checkout remains trusted main.
 
 Evidence: [.github/workflows/docs.yml](../../../.github/workflows/docs.yml).
 
@@ -49,6 +49,11 @@ Evidence: [.github/workflows/docs.yml](../../../.github/workflows/docs.yml).
 
 - **WHEN** the documentation workflow deploys
 - **THEN** its deployment depends on the completed build and uses the configured Pages environment
+
+#### Scenario: Publish guides for a release tag
+
+- **WHEN** a published release or manual verification runs the docs workflow from a version tag
+- **THEN** the environment accepts that version-tag event ref while the build checks out trusted main and deploys only its successful artifact
 
 ## Evidence and limitations
 

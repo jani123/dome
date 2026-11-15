@@ -30,6 +30,13 @@ Hugo renders project-owned Markdown/layouts under the GitHub project-site path. 
 
 The devcontainer post-start hook starts Hugo automatically, waits for HTTP readiness, and uses a container-local process lock to avoid duplicate servers on repeated hooks. Startup logs live in ignored `.build/docs-preview.log`. Local preview uses pinned Hugo on container port 1313 with a dynamically assigned host-loopback binding. Host-side URL discovery reads current workspace mappings without starting services; mappings alone do not establish readiness. See the [preview guide](../../.devcontainer/README.md#local-documentation-preview).
 
+The Pages environment must allow both the main branch and version-tag event
+refs. A release event remains a tag deployment for environment protection even
+when checkout selects main. Keep main source checkout and scoped deployment
+permissions; a tag policy such as v0.* enables the existing release trigger without
+allowing arbitrary branch deployments. See the
+[Pages setup guide](../../README.md#github-pages-setup).
+
 ## Boundary
 
 Local HTML/link checks are not evidence of an externally deployed site. Owner Pages settings and deployment permissions need verification in GitHub.

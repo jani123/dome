@@ -8,14 +8,15 @@ Module: `github.com/jani123/dome`.
 
 The initializer creates a separate Go consumer module with a matching Codex skill,
 typed YAML configuration, and a file resource confined to its local sandbox.
-The first release is planned as `v0.1.0-rc.1` followed by `v0.1.0`; neither is
-published by this implementation. Once the stable version is released:
+The current evaluation release is [v0.1.0-rc.1](https://github.com/jani123/dome/releases/tag/v0.1.0-rc.1).
+Stable `v0.1.0` follows the remaining acceptance checks. To try the candidate:
 
 ```sh
-go run github.com/jani123/dome/cmd/dome@v0.1.0 init my-machine --module example.com/my-machine
+go run github.com/jani123/dome/cmd/dome@v0.1.0-rc.1 init my-machine --module example.com/my-machine
 cd my-machine
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...
+./agent init --config config.yaml --non-interactive
 ./agent plan --json
 # Apply the inspected plan when ready:
 ./agent apply --json
@@ -47,7 +48,7 @@ Run the matching tagged initializer in an **existing empty directory** (includin
 no `.git`):
 
 ```sh
-go run github.com/jani123/dome/cmd/dome@v0.1.0 module init --module github.com/acme/dome-widget --name widget
+go run github.com/jani123/dome/cmd/dome@v0.1.0-rc.1 module init --module github.com/acme/dome-widget --name widget
 task dev:setup
 task check
 task test:race
@@ -149,8 +150,10 @@ select **Build and deployment → Source → GitHub Actions**. Repository Action
 policy must permit the official actions pinned in `.github/workflows/docs.yml`.
 Keep default token permissions read-only; the workflow requests the permissions
 its build and deployment jobs need. The `github-pages` environment must allow
-deployments from `main`: the workflow checks out `main` even when triggered by a
-published release. Approve deployments if environment reviewers are configured.
+both the `main` branch and release tags (a **Tag** policy such as `v0.*`). A release
+event carries its tag ref even though the workflow checks out trusted `main`
+source; allowing only the main branch rejects that deployment. Approve deployments
+if environment reviewers are configured.
 
 After merging the workflow, open the repository's **Actions → Documentation**
 workflow and use **Run workflow** on `main` when a manual deployment is needed.
