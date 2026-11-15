@@ -40,8 +40,13 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: go.mod
+          # Keep full native acceptance caches separate from lightweight jobs
+          # that otherwise race to save the same setup-go cache key.
+          cache-dependency-path: |
+            go.sum
+            .github/workflows/ci.yml
       - run: go install github.com/go-task/task/v3/cmd/task@v3.45.4
-      - run: go test -tags=integration ./internal/scaffold ./tests/integration -run 'TestPublishBoundaries|TestGeneratedConsumer|TestModulePublication|TestGeneratedModule' -count=1 -timeout=15m
+      - run: go test -v -tags=integration ./internal/scaffold ./tests/integration -run 'TestPublishBoundaries|TestGeneratedConsumer|TestModulePublication|TestGeneratedModule' -count=1 -timeout=15m
         env:
           DOME_MODULE_ACCEPTANCE: '1'
   docs:

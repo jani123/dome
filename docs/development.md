@@ -202,3 +202,19 @@ starter. After intentionally changing shared sources run
 `go run scripts/sync-module-assets.go` and verify with `--check`; maintain the
 GPL and upstream OpenSpec MIT provenance. Generated repositories import only
 public Dome APIs; their knowledge validator is repository-local source.
+
+## Generated-module acceptance timing
+
+The ordinary integration run checks external-module build/unit/docs and artifact
+validation. Full native acceptance uses `DOME_MODULE_ACCEPTANCE=1` and runs the
+documented Taskfile checks once, including race and real integration/E2E suites.
+See each command's elapsed time with:
+
+```sh
+DOME_MODULE_ACCEPTANCE=1 go test -v -tags=integration ./internal/scaffold \
+  -run '^TestGeneratedModule$' -count=1
+```
+
+Native CI keeps its
+Go cache separate from lightweight checks. Cold compiler/dependency and image
+setup still costs time; command timings distinguish it from individual suites.

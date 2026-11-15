@@ -36,6 +36,13 @@ go.mod. Disabling automatic selection requires providing a sufficiently recent
 compiler explicitly. Fixed gRPC and aligned OpenTelemetry dependencies are pinned
 in go.mod; a successful historical scan is not a permanent security guarantee.
 
+Generated-module smoke checks build and test an external module directly. Full
+native acceptance instead uses each documented Taskfile check once, including
+race and real container suites; it does not repeat standalone validators or
+compile-only container probes. Named command subtests expose timings in verbose
+CI output. Native acceptance uses a separate setup-go cache key from lightweight
+jobs so their smaller caches cannot win publication of the same cache entry.
+
 ## Boundary
 
 A privileged workspace is not a hardened isolation boundary. Live systemd coverage and external forge credentials are not required by the ordinary Git container fixture.

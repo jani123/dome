@@ -9,7 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +57,7 @@ func TestModulePublication(t *testing.T) {
 // TestGeneratedModule exercises actual commands in a standalone external module.
 func TestGeneratedModule(t *testing.T) {
 	if os.Getenv("DOME_MODULE_ACCEPTANCE") == "" { // No skip: the basic external compile always runs.
-		t.Log("Set DOME_MODULE_ACCEPTANCE=1 for developer tools, docs and container checks as well")
+		t.Log("Set DOME_MODULE_ACCEPTANCE=1 for race, developer tools, docs and real container checks as well")
 	}
 	root, err := filepath.Abs("../..")
 	require.NoError(t, err)
@@ -77,15 +79,40 @@ func TestGeneratedModule(t *testing.T) {
 	if path := os.Getenv("DOME_MODULE_FIXTURE_PATH"); path != "" {
 		require.NoError(t, os.WriteFile(path, []byte(dest), 0o600))
 	}
-	commands := [][]string{{"go", "build", "./..."}, {"go", "test", "./..."}, {"go", "test", "-race", "./..."}, {"go", "test", "-tags=integration", "./tests/integration", "-run", "^$"}, {"go", "test", "-tags=e2e", "./tests/e2e", "-run", "^$"}, {"go", "doc", "-all", "example.com/module-fixture"}, {"go", "run", "scripts/check-knowledge.go", "-policy"}, {"go", "run", "scripts/check-maintainer-skills.go"}}
+	commands := [][]string{
+		{"go", "build", "./..."},
+		{"go", "test", "./..."},
+		{"go", "doc", "-all", "example.com/module-fixture"},
+		{"go", "run", "scripts/check-knowledge.go", "-policy"},
+		{"go", "run", "scripts/check-maintainer-skills.go"},
+	}
 	if os.Getenv("DOME_MODULE_ACCEPTANCE") != "" {
-		commands = append(commands, []string{"task", "dev:setup"}, []string{"task", "check"}, []string{"task", "check:artifacts"}, []string{"task", "docs:build"}, []string{"task", "check:workflow"}, []string{"task", "test:integration"}, []string{"task", "test:e2e"})
+		// Exercise each documented check once. Full real container suites also
+		// compile their tagged tests; compile-only probes add no coverage here.
+		commands = [][]string{
+			{"task", "dev:setup"},
+			{"task", "build"},
+			{"task", "check"},
+			{"task", "test:race"},
+			{"go", "doc", "-all", "example.com/module-fixture"},
+			{"task", "check:artifacts"},
+			{"task", "docs:build"},
+			{"task", "check:workflow"},
+			{"task", "test:integration"},
+			{"task", "test:e2e"},
+		}
 	}
 	for _, args := range commands {
-		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Dir = dest
-		out, err := cmd.CombinedOutput()
-		require.NoError(t, err, "%v\n%s", args, out)
+		if !t.Run(strings.Join(args, " "), func(t *testing.T) {
+			started := time.Now()
+			cmd := exec.Command(args[0], args[1:]...)
+			cmd.Dir = dest
+			out, err := cmd.CombinedOutput()
+			t.Logf("command completed in %s", time.Since(started).Round(time.Millisecond))
+			require.NoError(t, err, "%v\n%s", args, out)
+		}) {
+			t.FailNow()
+		}
 	}
 }
 
