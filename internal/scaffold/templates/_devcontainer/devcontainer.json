@@ -1,0 +1,19 @@
+{
+  "name": "Dome agent",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "dev",
+  "updateRemoteUserUID": true,
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "containerEnv": {
+    "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+    "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+    "NO_PROXY": "${localEnv:NO_PROXY}",
+    "http_proxy": "${localEnv:http_proxy}",
+    "https_proxy": "${localEnv:https_proxy}",
+    "no_proxy": "${localEnv:no_proxy}"
+  },
+  "remoteEnv": { "PATH": "/usr/local/go/bin:/go/bin:${containerEnv:PATH}" },
+  "init": true,
+  "shutdownAction": "stopContainer"
+}

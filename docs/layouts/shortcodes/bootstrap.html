@@ -5,6 +5,13 @@
   {{- $flag = "--project-module" -}}
 {{- end -}}
 {{- $command := printf "go run github.com/jani123/dome/cmd/dome@%s init my-machine %s example.com/my-machine\ncd my-machine" $version $flag -}}
+{{- $docker := printf `docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --env HOME=/tmp \
+  --volume "$PWD:/bootstrap" --workdir /bootstrap \
+  golang:1.26.11-bookworm \
+  go run github.com/jani123/dome/cmd/dome@%s init my-machine %s example.com/my-machine
+cd my-machine` $version $flag -}}
 <div class="command-tabs" data-tabs>
   <div class="command-tab-list" role="tablist" aria-label="Bootstrap environment">
     <button type="button" id="bootstrap-go-tab" role="tab" aria-selected="true" aria-controls="bootstrap-go-panel" tabindex="0">Go</button>
@@ -14,9 +21,8 @@
     {{ highlight $command "sh" "" }}
   </section>
   <section id="bootstrap-docker-panel" role="tabpanel" aria-labelledby="bootstrap-docker-tab" tabindex="0" hidden>
-    <p>Open a Go shell in Docker, then run the remaining quickstart commands inside it:</p>
-    {{ highlight "docker run --rm -it \\\n  --user \"$(id -u):$(id -g)\" \\\n  --env HOME=/tmp \\\n  --volume \"$PWD:/workspace\" --workdir /workspace \\\n  golang:1.26.11-bookworm bash" "sh" "" }}
-    {{ highlight $command "sh" "" }}
+    <p>Create the project with Go in Docker, then continue on the host:</p>
+    {{ highlight $docker "sh" "" }}
   </section>
 </div>
-<noscript><p>For Docker: open a shell with <code>docker run --rm -it --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$PWD:/workspace" --workdir /workspace golang:1.26.11-bookworm bash</code>, then run the Go commands inside it.</p></noscript>
+<noscript><p>Docker alternative: run the initializer with the pinned Go image as shown in the <a href="https://github.com/jani123/dome#creating-a-project-without-host-go">README</a>, then continue on the host.</p></noscript>

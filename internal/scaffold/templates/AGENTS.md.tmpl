@@ -4,6 +4,9 @@ Dome dependency, templates, and skill: {{.Version}}. Start with the `dome` skill
 in `.agents/skills/dome/SKILL.md`. This project defines topology in Go and loads
 values through typed YAML; do not introduce a runtime infrastructure DSL.
 
+Use the generated `.devcontainer/` through Dev Container CLI or VS Code. Run
+commands at `/workspace` in its terminal; Go is supplied by the container.
+
 Build/test and inspect `./agent plan --json` before applying. Apply host changes
 when requested by the user. Preserve existing configuration and ownership. Keep
 secrets out of identifiers, logs, errors, snapshots, and execution metadata.

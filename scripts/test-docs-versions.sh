@@ -30,6 +30,10 @@ for version in next v0.2.0 v0.2.0-rc.1; do
   [[ "$quickstart" == *'id="bootstrap-go-tab" role="tab" aria-selected="true"'* ]]
   [[ "$quickstart" == *'id="bootstrap-docker-tab" role="tab" aria-selected="false"'* ]]
   [[ "$quickstart" == *'id="bootstrap-docker-panel" role="tabpanel" aria-labelledby="bootstrap-docker-tab" tabindex="0" hidden'* ]]
+  [[ "$quickstart" == *'id="workspace-cli-tab" role="tab" aria-selected="true"'* ]]
+  [[ "$quickstart" == *'id="workspace-vscode-panel" role="tabpanel" aria-labelledby="workspace-vscode-tab" tabindex="0" hidden'* ]]
+  [[ "$quickstart" == *'devcontainer up --workspace-folder .'* ]]
+  [[ "$quickstart" == *'devcontainer exec --workspace-folder . bash'* ]]
   expected=$version
   [[ "$version" != next ]] || expected=main
   page=$(cat "$output/$version/quickstart/index.html")

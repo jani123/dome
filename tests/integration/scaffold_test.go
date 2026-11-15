@@ -33,6 +33,8 @@ func testGeneratedConsumer(t *testing.T, version string) {
 	require.NoError(t, err)
 	require.Equal(t, string(license), string(files["LICENSE"]))
 	require.FileExists(t, filepath.Join(dest, "sandbox/.gitkeep"))
+	require.FileExists(t, filepath.Join(dest, ".devcontainer/devcontainer.json"))
+	require.FileExists(t, filepath.Join(dest, ".devcontainer/Dockerfile"))
 	run := func(name string, args ...string) string {
 		t.Helper()
 		cmd := exec.Command(name, args...)

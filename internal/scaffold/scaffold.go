@@ -70,6 +70,7 @@ func RenderWithModules(modulePath, version string, selections []string) (map[str
 		name := strings.TrimSuffix(strings.TrimPrefix(path, "templates/"), ".tmpl")
 		// Embedded template names avoid hidden-file exclusions in go:embed.
 		name = strings.ReplaceAll(name, "_agents/", ".agents/")
+		name = strings.ReplaceAll(name, "_devcontainer/", ".devcontainer/")
 		if name == "gitignore" {
 			name = ".gitignore"
 		}

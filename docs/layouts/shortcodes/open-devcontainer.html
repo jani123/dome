@@ -1,0 +1,18 @@
+<div class="command-tabs" data-tabs>
+  <div class="command-tab-list" role="tablist" aria-label="Open the development container">
+    <button type="button" id="workspace-cli-tab" role="tab" aria-selected="true" aria-controls="workspace-cli-panel" tabindex="0">Dev Container CLI</button>
+    <button type="button" id="workspace-vscode-tab" role="tab" aria-selected="false" aria-controls="workspace-vscode-panel" tabindex="-1">VS Code</button>
+  </div>
+  <section id="workspace-cli-panel" role="tabpanel" aria-labelledby="workspace-cli-tab" tabindex="0">
+    {{ highlight "devcontainer up --workspace-folder .\ndevcontainer exec --workspace-folder . bash" "sh" "" }}
+  </section>
+  <section id="workspace-vscode-panel" role="tabpanel" aria-labelledby="workspace-vscode-tab" tabindex="0" hidden>
+    {{ highlight "code ." "sh" "" }}
+    <ol>
+      <li>Install the <strong>Dev Containers</strong> extension in VS Code.</li>
+      <li>Run <strong>Dev Containers: Reopen in Container</strong> from the command palette.</li>
+      <li>Open a terminal in the container.</li>
+    </ol>
+  </section>
+</div>
+<noscript><p>CLI: run <code>devcontainer up --workspace-folder .</code>, then <code>devcontainer exec --workspace-folder . bash</code>. VS Code: open the project and run <strong>Dev Containers: Reopen in Container</strong>.</p></noscript>

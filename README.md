@@ -8,34 +8,56 @@ Module: `github.com/jani123/dome`.
 
 The initializer creates a separate Go consumer module with a matching Codex skill,
 typed YAML configuration, and a file resource confined to its local sandbox.
-The current evaluation release is [v0.1.0-rc.1](https://github.com/jani123/dome/releases/tag/v0.1.0-rc.1).
-Stable `v0.1.0` follows the remaining acceptance checks. To try the candidate:
+Development projects include their own `.devcontainer/` with pinned Go and a
+named non-root development user. To create one from main with host Go:
 
 ```sh
-go run github.com/jani123/dome/cmd/dome@v0.1.0-rc.1 init my-machine --module example.com/my-machine
+go run github.com/jani123/dome/cmd/dome@main init my-machine --project-module example.com/my-machine
 cd my-machine
+```
+
+Then open the generated workspace from the host:
+
+```sh
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . bash
+```
+
+Alternatively, open `my-machine` in VS Code with the Dev Containers extension and
+run **Dev Containers: Reopen in Container**. Run the following inside that
+container at `/workspace`:
+
+```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...
 ./agent init --config config.yaml --non-interactive
 ./agent plan --json
 # Apply the inspected plan when ready:
 ./agent apply --json
+./agent apply --json
 ```
 
-Use Linux amd64/arm64 and Go 1.26.11+ (locally or in Docker). Native release smoke tests gate platform
-claims. Open Codex in the project and ask it to use the `dome` skill. Adding a Go
+The first apply creates `sandbox/hello.txt`; the second reports no-op. Re-enter the
+same workspace path to keep resource identities stable. Go tooling stays inside
+the generated container; source, configuration, sandbox and state remain on the
+host bind mount. The named user is aligned with the local UID/GID. Startup never
+applies resources and the generated container does not mount the Docker socket.
+Use the container ID returned by `devcontainer up` with `docker stop` to stop a
+CLI-started workspace. VS Code stops it when the remote connection closes.
+
+The current evaluation release is
+[v0.1.0-rc.1](https://github.com/jani123/dome/releases/tag/v0.1.0-rc.1).
+Its immutable initializer uses `--module` for project identity and does not
+include the new consumer devcontainer. Use its matching versioned instructions.
+Stable `v0.1.0` follows the remaining acceptance checks.
+
+Use Linux amd64/arm64 with Docker and Dev Container CLI or VS Code. Native release
+smokes gate platform claims. Go on the host is optional; see Docker bootstrap
+below. Open Codex in the project and ask it to use the `dome` skill. Adding a Go
 dependency alone does not install skills. The compiled consumer runs without AI.
-Generate a fresh subdirectory when adding to an existing project; the initializer
-refuses existing destinations and never runs the generated agent. It resolves
-modules in a staged directory before publishing it. Parent directories must exist
+The initializer refuses existing destinations, resolves dependencies before
+publication, and never runs the generated agent. Parent directories must exist
 and must not be symlinks. Preserve `sandbox/.gitkeep` when committing the starter.
-
-The library, initializer, skill, and templates use one exact version. For a
-development consumer from main, run:
-
-```sh
-go run github.com/jani123/dome/cmd/dome@main init my-machine --project-module example.com/my-machine
-```
 
 `--project-module` names the Go module being created; it does not add a dependency
 and the name does not need to exist online. Older tagged initializers used
@@ -59,20 +81,38 @@ initialization does not compile or apply the agent. Dome's built-in file module
 is already registered. `--module` does not name the project; use
 `--project-module` for that identity.
 
-Without host Go, start this shell in the directory where you want the project,
-then run the bootstrap, build, test, and agent commands inside it:
+### Creating a project without host Go
+
+From the host directory where you want the project:
 
 ```sh
-docker run --rm -it \
+docker run --rm \
   --user "$(id -u):$(id -g)" \
   --env HOME=/tmp \
-  --volume "$PWD:/workspace" --workdir /workspace \
-  golang:1.26.11-bookworm bash
+  --volume "$PWD:/bootstrap" --workdir /bootstrap \
+  golang:1.26.11-bookworm \
+  go run github.com/jani123/dome/cmd/dome@main init my-machine --project-module example.com/my-machine
+cd my-machine
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . bash
 ```
 
-The bind mount keeps the project on your host; the UID/GID keeps its files owned
-by you. This requires Docker access on Linux and uses temporary container caches.
-Stay in the same mounted project path for subsequent agent runs.
+The bootstrap container exits after generation; devcontainer commands run on the
+host. Continue build/test/agent commands in the generated container. Docker
+bootstrap preserves caller ownership and uses temporary caches. Proxy environment
+variables in the generated devcontainer reference the host environment. When a
+proxy hostname needs an explicit route, add its actual reachable address through
+`runArgs` (for example `--add-host=proxy:HOST_IP`); see the generated README.
+
+To verify the full current-source walkthrough with real Docker and the real
+Dev Container CLI, run `scripts/test-consumer-devcontainer.sh`. Set
+`DOME_DEVCONTAINER_CLI` if its executable is outside PATH. This explicit acceptance
+command needs Node.js (the CLI runtime), preserves ignored diagnostics under
+`.build/`, and cleans up its own container. Its pre-publication bootstrap runs
+current source in Docker with the published RC library dependency, then exercises
+the exact guide YAML/Go example, generated-container build/test, plan/apply,
+no-op repeat, stop/re-entry, and UID/GID ownership. This is distinct from public
+`@main` or VS Code GUI acceptance.
 
 Go resolves main to an immutable v0 pseudo-version, which pins the generated
 dependency and matching assets. Development guides under `/next/` follow main;

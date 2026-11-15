@@ -63,3 +63,22 @@ func TestPatchedGoBaseline(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, string(files["go.mod"]), "go 1.26.11")
 }
+
+func TestConsumerDevcontainer(t *testing.T) {
+	files, err := scaffold.Render("example.com/consumer", "v0.1.0")
+	require.NoError(t, err)
+	var cfg map[string]any
+	require.NoError(t, json.Unmarshal(files[".devcontainer/devcontainer.json"], &cfg))
+	require.Equal(t, "dev", cfg["remoteUser"])
+	require.Equal(t, true, cfg["updateRemoteUserUID"])
+	require.Equal(t, "/workspace", cfg["workspaceFolder"])
+	require.Equal(t, "source=${localWorkspaceFolder},target=/workspace,type=bind", cfg["workspaceMount"])
+	require.NotContains(t, cfg, "postCreateCommand")
+	require.NotContains(t, cfg, "postStartCommand")
+	require.NotContains(t, string(files[".devcontainer/devcontainer.json"]), "docker.sock")
+	dockerfile := string(files[".devcontainer/Dockerfile"])
+	require.Contains(t, dockerfile, "FROM golang:1.26.11-bookworm")
+	require.Contains(t, dockerfile, "useradd")
+	require.Contains(t, dockerfile, "USER dev")
+	require.NotContains(t, files, "_devcontainer/devcontainer.json")
+}

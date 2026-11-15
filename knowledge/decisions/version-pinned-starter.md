@@ -6,6 +6,8 @@ generated: {by: codex/2026-11-13, at: "2026-11-13T07:03:33Z"}
 sources:
   - id: source-external-modules
     resource: ../../internal/scaffold/external_modules.go
+  - id: source-devcontainer
+    resource: ../../internal/scaffold/templates/_devcontainer/devcontainer.json
   - id: source-quickstart
     resource: ../../docs/content/quickstart.md
   - id: source-module
@@ -37,9 +39,14 @@ explicit `Module{}` registrations. Users configure backend or constructor
 parameters in the generated Go before building. Staged dependency resolution
 refuses changes to the requested Dome and external-module pins, preserving asset
 alignment and avoiding publishing a project with silently changed dependencies.
-The quickstart offers a pinned Go Docker shell with caller UID/GID and a bind
-mount, keeping Go tooling in the container and project files in the working
-directory. Keep agent invocations in the same mounted path for stable identity.
+Consumer generation includes `.devcontainer/devcontainer.json` and its Dockerfile,
+using pinned Go and a named non-root user with UID/GID alignment. The project is
+bind-mounted at `/workspace`, keeping state and resource identity stable across
+starts. Docker bootstrap only creates the project and returns to the host;
+Dev Container CLI or VS Code opens the persistent workspace for subsequent
+commands. Neither startup nor generation applies resources or mounts Docker's
+socket. Proxy values are forwarded by reference and restricted hostnames require
+explicit route configuration rather than alternate downloads.
 
 Consumer initialization from main uses Go's resolved immutable pseudo-version for
 the dependency and every generated version field. Unversioned local builds and

@@ -2,8 +2,20 @@
 
 Generated with Dome {{.Version}} for project module `{{.Module}}`.
 This names your project; it does not need to be hosted online.
-Requires Linux, Go 1.26.11+, and optional Codex for conversational authoring.
-Run commands from this project directory. `sandbox/` must remain present.
+Requires Linux with Docker and either Dev Container CLI or VS Code with the
+Dev Containers extension. Go 1.26.11 is supplied by `.devcontainer/`; host Go is
+optional. Codex is optional for conversational authoring.
+
+From the host project directory, start the generated workspace:
+
+```sh
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . bash
+```
+
+Alternatively, open this folder in VS Code and run **Dev Containers: Reopen in
+Container**, then open its terminal. Run the remaining commands inside the
+container at `/workspace`. `sandbox/` must remain present.
 
 ```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
@@ -14,6 +26,22 @@ go test ./...
 ./agent apply --json
 ./agent status
 ```
+
+To re-enter later, run the same CLI commands or reopen the folder in VS Code.
+The workspace uses a named non-root `dev` user with local UID/GID alignment. Its
+bind mount keeps project files and state on your host; keep using `/workspace`
+inside the container to preserve resource identities. Creation/startup never
+applies resources and the container has no host Docker socket.
+
+To stop a CLI-started workspace, get its container ID from `devcontainer up`'s
+JSON output and run `docker stop <container-id>` on the host. For VS Code, close
+the remote connection; the configuration stops that container.
+
+If your environment requires a proxy, standard HTTP(S) proxy environment variables
+are forwarded by reference. A proxy hostname only known to the host may need an
+explicit Docker host mapping in `runArgs`, such as `--add-host=proxy:HOST_IP`.
+Configure its real reachable address; do not change download sources to bypass
+network failures.
 
 The starter manages only `sandbox/hello.txt`, with mode `0640`, and stores state
 under `.dome/`. Edit `config.yaml` to change content. Set `managed: false` to

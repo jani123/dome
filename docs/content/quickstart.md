@@ -5,7 +5,9 @@ weight: 10
 
 ## Prerequisites
 
-- Linux with Go 1.26.11 or newer, or Docker.
+- Linux with Docker.
+- Dev Container CLI, or VS Code with the Dev Containers extension.
+- Optional: Go 1.26.11 or newer for direct project creation.
 - Module-download access.
 - Permission to access the target machine.
 - Optional: Codex, the initially supported coding agent.
@@ -19,7 +21,15 @@ weight: 10
 `example.com/my-machine` names your new Go project; it does not need to exist
 online.
 
-### 2. Set the file contents
+### 2. Open the development container
+
+From the host, in `my-machine`:
+
+{{< open-devcontainer >}}
+
+Run all remaining commands in the container terminal at `/workspace`.
+
+### 3. Set the file contents
 
 In `config.yaml`:
 
@@ -28,7 +38,7 @@ content: "Hello from Dome\n"
 managed: true
 ```
 
-### 3. Define the file
+### 4. Define the file
 
 In `cmd/agent/main.go`, use this `desired` function with the generated imports
 and `Settings` and `Secrets` types:
@@ -62,9 +72,9 @@ The generated `main` registers the file module:
 agent.WithModules(file.Module{}),
 ```
 
-### 4. Build and plan
+### 5. Build and plan
 
-Run from `my-machine`:
+Run inside the devcontainer:
 
 ```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
@@ -73,7 +83,7 @@ go test ./...
 ./agent plan --json
 ```
 
-### 5. Create the file
+### 6. Create the file
 
 After reviewing the plan:
 
@@ -86,10 +96,13 @@ cat sandbox/hello.txt
 Hello from Dome
 ```
 
-### 6. Run it again
+### 7. Run it again
 
 ```sh
 ./agent apply --json
 ```
 
 The second apply reports `no-op`.
+
+To reopen the CLI terminal later, run `devcontainer exec --workspace-folder . bash`
+from the host project directory. In VS Code, use Reopen in Container again.
