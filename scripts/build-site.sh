@@ -7,6 +7,15 @@ repo_root=$PWD
 site="$repo_root/.build/site"
 rm -rf "$site"
 mkdir -p "$site"
+# Supply the picker from the same published tags used to assemble snapshots.
+# Validate before passing values into Hugo templates.
+doc_versions=next
+while IFS= read -r tag; do
+  [[ -z "$tag" ]] && continue
+  [[ "$tag" =~ ^v0\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo 'Invalid release tag' >&2; exit 1; }
+  doc_versions+=",$tag"
+done < <(sort -Vr "$tags_file")
+export HUGO_PARAMS_DOCVERSIONS="$doc_versions"
 scripts/build-docs.sh next
 cp -a .build/docs/next "$site/next"
 stable=''

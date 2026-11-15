@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"runtime/debug"
 	"testing"
 
 	"github.com/jani123/dome/internal/scaffold"
@@ -71,4 +72,35 @@ func TestModulePublicationFailure(t *testing.T) {
 	root := commandWithModule("v0.1.0", nil, nil, func(context.Context, string, map[string]scaffold.File, scaffold.Runner) error { return failure }, nil)
 	root.SetArgs([]string{"module", "init", "--module", "example.com/demo", "--name", "demo"})
 	require.ErrorIs(t, root.Execute(), failure)
+}
+
+func TestResolvedBuildVersion(t *testing.T) {
+	for _, v := range []string{"v0.1.0", "v0.1.0-rc.1", "v0.0.0-20261112182025-28339340120a"} {
+		t.Run(v, func(t *testing.T) {
+			info := &debug.BuildInfo{Main: debug.Module{Version: v}}
+			require.Equal(t, v, resolveBuildVersion("dev", info))
+			require.Equal(t, "v0.2.0", resolveBuildVersion("v0.2.0", info))
+		})
+	}
+	for _, v := range []string{"", "(devel)", "main", "v0.1"} {
+		require.Equal(t, "dev", resolveBuildVersion("dev", &debug.BuildInfo{Main: debug.Module{Version: v}}))
+	}
+	require.Equal(t, "dev", resolveBuildVersion("dev", nil))
+}
+
+func TestDevelopmentConsumerInitialization(t *testing.T) {
+	const v = "v0.0.0-20261112182025-28339340120a"
+	called := false
+	root := command(v, func(_ context.Context, _ string, files map[string][]byte, _ scaffold.Runner) error {
+		called = true
+		require.Contains(t, string(files["go.mod"]), v)
+		require.NoError(t, scaffold.CheckVersion(v, files["dome.json"]))
+		return nil
+	}, nil)
+	root.SetOut(&bytes.Buffer{})
+	root.SetArgs([]string{"init", "dest", "--module", "example.com/consumer"})
+	require.NoError(t, root.Execute())
+	require.True(t, called)
+	_, err := scaffold.RenderModule("example.com/demo", "demo", v)
+	require.Error(t, err)
 }

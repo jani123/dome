@@ -26,12 +26,13 @@ agent if it has not discovered the new project-local skill.
 
 Use the installed API with `go doc github.com/jani123/dome/agent` from this
 module, so documentation matches its selected dependency. Versioned guides will
-be published at https://jani123.github.io/dome/{{.Version}}/ .
+be published at https://jani123.github.io/dome/{{.GuideVersion}}/ .
+Development guides can move ahead of a pinned development snapshot; use local
+`go doc` for its exact API.
 
 ## Updates
 
-Keep a clean commit/backup. Run the initializer at the target exact release
-version into a temporary sibling directory, review its skill, instructions,
+Keep a clean commit/backup. Run the initializer at the target exact release or resolved Go pseudo-version into a temporary sibling directory, review its skill, instructions,
 manifest, and starter against your project, then update the dependency and matching
 assets together. Preserve your authored resources and playbooks. Run `go mod tidy`,
 build/test, and inspect the JSON plan before deploying. Back up SQLite with the

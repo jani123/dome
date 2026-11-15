@@ -27,11 +27,15 @@ func Render(modulePath, version string) (map[string][]byte, error) {
 	if modulePath == "github.com/jani123/dome" || strings.HasPrefix(modulePath, "github.com/jani123/dome/") {
 		return nil, fault.New(fault.Validation, "choose a consumer module outside the Dome module path")
 	}
-	if !semver.IsValid(version) || module.IsPseudoVersion(version) || semver.Canonical(version) != version || semver.Major(version) != "v0" || semver.Build(version) != "" {
-		return nil, fault.New(fault.Validation, "initializer requires an exact v0 release version; use a tagged initializer")
+	if !semver.IsValid(version) || semver.Canonical(version) != version || semver.Major(version) != "v0" || semver.Build(version) != "" {
+		return nil, fault.New(fault.Validation, "initializer requires an exact v0 release or resolved Go pseudo-version; use a versioned initializer")
 	}
 	files := map[string][]byte{}
-	data := struct{ Module, Version string }{modulePath, version}
+	guideVersion := version
+	if module.IsPseudoVersion(version) {
+		guideVersion = "next"
+	}
+	data := struct{ Module, Version, GuideVersion string }{modulePath, version, guideVersion}
 	err := fs.WalkDir(templates, "templates", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err

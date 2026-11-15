@@ -13,22 +13,26 @@ import (
 	"github.com/jani123/dome/core/fault"
 	"github.com/jani123/dome/internal/scaffold"
 	"github.com/spf13/cobra"
-	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 )
 
-// version is set only by tagged release builds. go run/install @version uses
-// module build metadata instead; local development builds remain unversioned.
+// version is set by tagged release builds. go run/install uses the resolved
+// module build metadata; unversioned local development builds remain dev.
 var version = "dev"
 
 func buildVersion() string {
-	if version != "dev" {
-		return version
+	info, _ := debug.ReadBuildInfo()
+	return resolveBuildVersion(version, info)
+}
+
+func resolveBuildVersion(explicit string, info *debug.BuildInfo) string {
+	if explicit != "dev" {
+		return explicit
 	}
-	if info, ok := debug.ReadBuildInfo(); ok && semver.IsValid(info.Main.Version) && semver.Canonical(info.Main.Version) == info.Main.Version && !module.IsPseudoVersion(info.Main.Version) {
+	if info != nil && semver.IsValid(info.Main.Version) && semver.Canonical(info.Main.Version) == info.Main.Version {
 		return info.Main.Version
 	}
-	return version
+	return explicit
 }
 
 type publisher func(context.Context, string, map[string][]byte, scaffold.Runner) error

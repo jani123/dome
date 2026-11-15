@@ -1,1 +1,7 @@
-{{ define "main" }}<h1>{{ .Title }}</h1>{{ .Content }}{{ end }}
+{{ define "main" }}<h1>{{ .Title }}</h1>{{ .Content }}
+{{ if .IsHome }}<div class="start-links">
+{{ with .Site.GetPage "/quickstart" }}<a href="{{ .RelPermalink }}"><strong>Build your first agent →</strong><span>Start with a local sandbox and a compiled Go agent.</span></a>{{ end }}
+{{ with .Site.GetPage "/authoring" }}<a href="{{ .RelPermalink }}"><strong>Define your infrastructure →</strong><span>Learn how to author resources and playbooks.</span></a>{{ end }}
+{{ with .Site.GetPage "/recovery" }}<a href="{{ .RelPermalink }}"><strong>Understand recovery →</strong><span>Explore reconciliation, verification, and interrupted work.</span></a>{{ end }}
+{{ with .Site.GetPage "/configuration" }}<a href="{{ .RelPermalink }}"><strong>Configure your agent →</strong><span>Load typed values and encrypted secrets.</span></a>{{ end }}
+</div>{{ end }}{{ end }}

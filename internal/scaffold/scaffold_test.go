@@ -12,7 +12,7 @@ import (
 )
 
 func TestRender(t *testing.T) {
-	for _, version := range []string{"v0.1.0-rc.1", "v0.1.0", "v0.2.0"} {
+	for _, version := range []string{"v0.1.0-rc.1", "v0.1.0", "v0.2.0", "v0.0.0-20261112182025-28339340120a", "v0.1.1-0.20261112182025-28339340120a"} {
 		t.Run(version, func(t *testing.T) {
 			files, err := scaffold.Render("example.com/my-machine", version)
 			require.NoError(t, err)
@@ -21,7 +21,9 @@ func TestRender(t *testing.T) {
 			require.NoError(t, err)
 			var manifest map[string]any
 			require.NoError(t, json.Unmarshal(files["dome.json"], &manifest))
-			require.Equal(t, version, manifest["skill_version"])
+			for _, field := range []string{"dome_version", "skill_version", "template_version"} {
+				require.Equal(t, version, manifest[field])
+			}
 			require.NoError(t, scaffold.CheckVersion(version, files["dome.json"]))
 			require.Error(t, scaffold.CheckVersion("v0.3.0", files["dome.json"]))
 			skill := string(files[".agents/skills/dome/SKILL.md"])
@@ -49,7 +51,7 @@ func TestInvalidInput(t *testing.T) {
 		_, err := scaffold.Render(module, "v0.1.0")
 		require.Error(t, err)
 	}
-	for _, version := range []string{"dev", "main", "latest", "v1.0.0", "v0.1.0+build", "v0.1", "v0.0.0-20261112182025-28339340120a"} {
+	for _, version := range []string{"dev", "main", "latest", "v1.0.0", "v0.1.0+build", "v0.1", "v0.0.0-20261112182025-28339340120a+build"} {
 		_, err := scaffold.Render("example.com/consumer", version)
 		require.Error(t, err)
 	}

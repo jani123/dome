@@ -42,3 +42,7 @@ revision on failures. Inspect the exact installed API before adding recovery cod
 
 Hand over source, dependency/build material, and configuration with customer
 binaries; preserve the customer's ability to rebuild and change providers.
+
+For a development consumer, keep the resolved Go pseudo-version in the dependency
+and every asset version field. Never replace that immutable pin with `main`.
+Use local `go doc` for the pinned API; next guides may describe newer main source.

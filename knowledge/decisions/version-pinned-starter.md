@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: "Project initialization"
-description: "One release binds generated source, dependency, skill, and template metadata."
+description: "One immutable version binds generated source, dependency, skill, and template metadata."
 generated: {by: codex/2026-11-13, at: "2026-11-13T07:03:33Z"}
 sources:
   - id: source-module
@@ -22,9 +22,16 @@ sources:
 
 # Project initialization
 
-A dependency alone cannot install coding-agent skills or instructions. The initializer therefore embeds matching assets, validates the requested consumer module and exact release version, resolves dependencies in a staged directory, and atomically publishes a fresh project. The sandbox and tracked placeholder keep the first exercise unprivileged and reproducible after cloning.
+A dependency alone cannot install coding-agent skills or instructions. The initializer therefore embeds matching assets, validates the requested consumer module and canonical exact v0 release or resolved Go pseudo-version, resolves dependencies in a staged directory, and atomically publishes a fresh project. The sandbox and tracked placeholder keep the first exercise unprivileged and reproducible after cloning.
 
-The standalone module initializer operates in an existing empty directory and emits a public library, explicit unfinished backend, repository-local maintainer tooling and real container fixtures. It stages dependency/tool preparation, then uses no-replace entry publication. Partial published output is retained after failure to preserve concurrent writers. Test fixtures are not production host support.
+Consumer initialization from main uses Go's resolved immutable pseudo-version for
+the dependency and every generated version field. Unversioned local builds and
+mutable branch names cannot become dependency pins. Development guide links use
+next; local Go documentation remains authoritative for the pinned API. Release
+and pseudo-version consumer tests explicitly use a local replacement and do not
+establish public main availability.
+
+The standalone module initializer requires an exact release tag and operates in an existing empty directory and emits a public library, explicit unfinished backend, repository-local maintainer tooling and real container fixtures. It stages dependency/tool preparation, then uses no-replace entry publication. Partial published output is retained after failure to preserve concurrent writers. Test fixtures are not production host support.
 
 ## Boundary
 

@@ -16,10 +16,17 @@ import (
 )
 
 func TestGeneratedConsumer(t *testing.T) {
+	for _, version := range []string{"v0.1.0-rc.1", "v0.0.0-20261112182025-28339340120a"} {
+		t.Run(version, func(t *testing.T) { testGeneratedConsumer(t, version) })
+	}
+}
+
+func testGeneratedConsumer(t *testing.T, version string) {
 	dest := filepath.Join(t.TempDir(), "consumer")
-	files, err := scaffold.Render("example.com/consumer", "v0.1.0-rc.1")
+	files, err := scaffold.Render("example.com/consumer", version)
 	require.NoError(t, err)
-	// Before the first tag exists, explicitly test against the local checkout.
+	// Exercise the local implementation explicitly; this does not prove public resolution.
+	require.NoError(t, scaffold.CheckVersion(version, files["dome.json"]))
 	files["go.mod"] = append(files["go.mod"], []byte("\nreplace github.com/jani123/dome => "+strconv.Quote(testutil.Root())+"\n")...)
 	require.NoError(t, scaffold.Publish(context.Background(), dest, files, scaffold.Tidy))
 	license, err := os.ReadFile(filepath.Join(testutil.Root(), "LICENSE"))

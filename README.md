@@ -30,7 +30,19 @@ refuses existing destinations and never runs the generated agent. It resolves
 modules in a staged directory before publishing it. Parent directories must exist
 and must not be symlinks. Preserve `sandbox/.gitkeep` when committing the starter.
 
-The library, initializer, skill, templates, and docs use one exact version. For
+The library, initializer, skill, and templates use one exact version. For a
+development consumer from main, run:
+
+```sh
+go run github.com/jani123/dome/cmd/dome@main init my-machine --module example.com/my-machine
+```
+
+Go resolves main to an immutable v0 pseudo-version, which pins the generated
+dependency and matching assets. Development guides under `/next/` follow main;
+use local `go doc` for the exact pinned API. Resource-module initialization still
+requires an exact release tag.
+
+The release guides use their selected exact tag. For
 updates, generate a temporary sibling project at the target version, review its
 assets and dependency, and merge changes while preserving custom Go/instructions.
 Build/test and inspect a fresh JSON plan before deployment; back up state with the
@@ -110,7 +122,14 @@ that public module version. This is not a published release.
 GitHub Actions runs all four repository checks plus native amd64/arm64 starter
 smokes and docs checks. `scripts/install-hugo.sh` downloads the version in
 `.hugo-version` from the official GitHub release and checks its published SHA-256.
-Docs use a minimal repository-owned Hugo layout. In GitHub branch/ruleset settings,
+Docs use a repository-owned responsive Hugo layout with light and dark themes.
+The theme follows the system preference until a reader selects a remembered
+preference. Mobile navigation scrolls independently below the header; guides
+include an on-page contents list. The header version menu lists the published
+release snapshots during site assembly and marks the current version. Local
+previews list their current version and link to all published versions. Run
+`bash scripts/test-docs-versions.sh` to check the picker templates. Templates live in `docs/layouts/`, with styles
+and navigation behavior in `docs/static/`. In GitHub branch/ruleset settings,
 require `check`, `test-race`, `test-e2e`, `test-integration`,
 `Starter (ubuntu-24.04)`, `Starter (ubuntu-24.04-arm)`, and
 `Documentation and workflow checks`, and `Knowledge and specifications` before merging into `main`. Verify runner

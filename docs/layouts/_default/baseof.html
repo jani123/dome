@@ -2,18 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
 <title>{{ .Title }} · Dome</title>
-<style>
-:root{color-scheme:light dark;font-family:system-ui,sans-serif;line-height:1.65}body{max-width:76rem;margin:0 auto;padding:2rem}header{border-bottom:1px solid #888;padding-bottom:1rem}a{color:light-dark(#154dc2,#90baff)}.layout{display:grid;grid-template-columns:14rem minmax(0,1fr);gap:3rem;margin-top:2rem}nav a{display:block;margin:.5rem 0}main{max-width:54rem}pre{overflow:auto;background:light-dark(#f1f3f5,#20252b);padding:1rem}code{font-size:.9rem}footer{margin-top:3rem;border-top:1px solid #888;padding-top:1rem}@media(max-width:700px){.layout{display:block}nav{margin-bottom:2rem}}
-</style>
+<script>try{const t=localStorage.getItem('dome-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch{}</script>
+<link rel="stylesheet" href="{{ "styles.css" | relURL }}">
+<script src="{{ "navigation.js" | relURL }}" defer></script>
 </head>
 <body>
-<header><a href="{{ .Site.Home.RelPermalink }}">Dome</a> — Go infrastructure agents · {{ .Site.Params.version }}</header>
-<div class="layout"><nav aria-label="Guides">
-{{ range .Site.RegularPages.ByWeight }}<a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}
-<a href="https://github.com/jani123/dome">Source</a>
-<p>API: <code>go doc github.com/jani123/dome/agent</code><br>Run in your selected Go module.</p>
-<a href="https://jani123.github.io/dome/">Documentation versions</a>
-</nav><main>{{ block "main" . }}{{ end }}</main></div>
-<footer>Customers should receive source, configuration, and build material with their agent. Paid implementation and support are welcome.</footer>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="header"><div class="header-inner">
+<a class="brand" href="{{ .Site.Home.RelPermalink }}"><span class="brand-mark" aria-hidden="true">◒</span> Dome <span class="brand-caption">Documentation</span></a>
+<div class="header-actions"><div class="version-picker">
+<label class="sr-only" for="version-select">Documentation version</label>
+<select id="version-select" class="version" aria-label="Documentation version">
+{{ $currentVersion := .Site.Params.version }}
+{{ $versions := slice $currentVersion }}
+{{ with .Site.Params.docversions }}{{ $versions = split . "," }}{{ end }}
+{{ range $versions }}<option value="{{ if eq . $currentVersion }}{{ $.Site.Home.RelPermalink }}{{ else }}https://jani123.github.io/dome/{{ . }}/{{ end }}" {{ if eq . $currentVersion }}selected{{ end }}>{{ if eq . "next" }}next · Development{{ else }}{{ . }}{{ end }}</option>{{ end }}
+<option value="https://jani123.github.io/dome/">All published versions…</option>
+</select>
+<noscript><a href="https://jani123.github.io/dome/">Browse versions</a></noscript>
+</div><button id="theme-toggle" hidden aria-label="Switch color theme">Theme</button><button id="menu-toggle" hidden aria-expanded="false" aria-controls="sidebar">Menu</button></div>
+</div></header>
+<div class="layout">
+<aside id="sidebar" class="sidebar" aria-label="Documentation navigation">
+<nav aria-label="Guides"><p class="nav-label">Documentation</p>
+<a href="{{ .Site.Home.RelPermalink }}" {{ if .IsHome }}aria-current="page"{{ end }}>Overview</a>
+{{ $current := . }}
+{{ range .Site.RegularPages.ByWeight }}{{ if eq .Weight 10 }}<p class="nav-label">Get started</p>{{ else if eq .Weight 30 }}<p class="nav-label">Build agents</p>{{ else if eq .Weight 50 }}<p class="nav-label">Operate & maintain</p>{{ end }}<a href="{{ .RelPermalink }}" {{ if eq .RelPermalink $current.RelPermalink }}aria-current="page"{{ end }}>{{ .Title }}</a>{{ end }}
+<p class="nav-label">Resources</p><a href="https://github.com/jani123/dome">GitHub ↗</a><a href="https://jani123.github.io/dome/">Documentation versions ↗</a>
+</nav>
+<div class="api-note"><p class="nav-label">Local API reference</p><code>go doc<br>github.com/jani123/dome/agent</code><p>Run in your selected Go module.</p></div>
+</aside>
+<main id="main" tabindex="-1"><p class="eyebrow">Dome / {{ .Site.Params.version }}</p>{{ block "main" . }}{{ end }}
+<footer>Built with Go. Operated by you.<p>Customers should receive source, configuration, and build material with their agent. Paid implementation and support are welcome.</p></footer>
+</main>
+<aside class="page-outline" aria-label="On this page">{{ if .Fragments.Headings }}<details open><summary>On this page</summary>{{ .TableOfContents }}</details>{{ end }}</aside>
+</div>
 </body></html>

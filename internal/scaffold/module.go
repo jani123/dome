@@ -25,7 +25,11 @@ type File struct {
 
 // RenderModule renders an external resource library without touching the host.
 func RenderModule(modulePath, name, version string) (map[string]File, error) {
-	// Keep supported release validation identical to consumer generation.
+	// Resource-module starters remain release-only.
+	if module.IsPseudoVersion(version) {
+		return nil, fault.New(fault.Validation, "module initializer requires an exact v0 release version; use a tagged initializer")
+	}
+	// Share consumer module-path and canonical v0 validation.
 	if _, err := Render(modulePath, version); err != nil {
 		return nil, err
 	}

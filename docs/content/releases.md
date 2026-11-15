@@ -24,3 +24,10 @@ Published guide snapshots live under `/vX.Y.Z/`, development guides under
 `/next/`, and the current stable copy under `/latest/`. Old snapshots remain
 available. A published module tag is immutable; a failed release is repaired by
 a new version, not moving the old tag. Unusable versions may be retracted.
+
+The quickstart command follows the selected guide version: a release tag for
+release guides, and `@main` for `next`. Go resolves main to an immutable
+pseudo-version; the generated consumer dependency, skill, templates, and manifest
+all use that same version. Development snapshots are experimental. Use local
+`go doc` for the exact API of a pinned snapshot, since next guides follow main.
+Resource-module initialization continues to require an exact release tag.

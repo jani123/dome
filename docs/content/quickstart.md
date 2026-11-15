@@ -5,43 +5,91 @@ weight: 10
 
 ## Prerequisites
 
-Use Linux with Go 1.26.11 or newer. Codex is the initially supported optional coding
-agent. You need module-download access and permission to access the target machine.
-The starter manages a local sandbox and needs no root permissions.
+- Linux with Go 1.26.11 or newer.
+- Module-download access.
+- Permission to access the target machine.
+- Optional: Codex, the initially supported coding agent.
 
 ## Bootstrap
 
-Use the published release matching these guides. Development guides show the
-planned first stable version, which requires publication before it can resolve:
+### 1. Create the project
 
 ```sh
 go run github.com/jani123/dome/cmd/dome@{{< dome-version >}} init my-machine --module example.com/my-machine
 cd my-machine
+```
+
+### 2. Set the file contents
+
+In `config.yaml`:
+
+```yaml
+content: "Hello from Dome\n"
+managed: true
+```
+
+### 3. Define the file
+
+In `cmd/agent/main.go`, use this `desired` function with the generated imports
+and `Settings` and `Secrets` types:
+
+```go
+func desired(ctx context.Context, doc config.Document) ([]resource.Resource, error) {
+    settings, _, err := config.Parse[Settings, Secrets](ctx, doc, nil)
+    if err != nil {
+        return nil, err
+    }
+    if !settings.Managed {
+        return nil, nil
+    }
+    root, err := filepath.Abs("sandbox")
+    if err != nil {
+        return nil, fault.Wrap(fault.Validation, err)
+    }
+    return []resource.Resource{
+        &file.File{
+            Path:    filepath.Join(root, "hello.txt"),
+            Content: []byte(settings.Content),
+            Mode:    0o640,
+        },
+    }, nil
+}
+```
+
+The generated `main` registers the file module:
+
+```go
+agent.WithModules(file.Module{}),
+```
+
+### 4. Build and plan
+
+Run from `my-machine`:
+
+```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
 go test ./...
 ./agent init --config config.yaml --non-interactive
 ./agent plan --json
 ```
 
-The command refuses existing destinations. To add Dome alongside an existing
-project, generate a new subdirectory with its own module. Go dependencies and
-matching Codex skills are installed together. Generation never applies resources.
-Until the first release, see the repository README's local development procedure;
-these release commands cannot resolve an unpublished version.
+### 5. Create the file
 
-Inspect the plan, then when ready:
+After reviewing the plan:
 
 ```sh
 ./agent apply --json
-./agent apply --json
-./agent status
+cat sandbox/hello.txt
 ```
 
-The first apply creates `sandbox/hello.txt` with permissions `0640`. The next
-apply reports `no-op`. `plan` observes resources without applying host changes,
-but may create SQLite state. Keep the sandbox directory and run the starter from
-its project root so relative state/config paths and resource identity stay stable.
+```text
+Hello from Dome
+```
 
-Edit `config.yaml` to change the content. Set `managed: false` to prune the
-previously owned file. Unrelated files remain untouched. Do not delete the state
-database to reset an agent that owns real resources.
+### 6. Run it again
+
+```sh
+./agent apply --json
+```
+
+The second apply reports `no-op`.

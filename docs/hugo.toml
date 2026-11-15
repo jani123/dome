@@ -6,3 +6,5 @@ disableKinds = ['taxonomy', 'term', 'RSS', 'sitemap']
   unsafe = false
 [params]
   version = 'next'
+[markup.highlight]
+  noClasses = false

@@ -10,7 +10,7 @@ requirements were authored before the code or that external acceptance passed.
 
 ### Requirement: Version-matched generation
 
-Initialization SHALL require a valid external consumer module and canonical exact v0 release version, rejecting dev, pseudo-version, and unsupported version inputs.
+Consumer initialization SHALL require a valid external consumer module and a canonical v0 release version or canonical v0 Go pseudo-version resolved for the initializer. It SHALL pin the dependency, skill, templates, and manifest to the same immutable version, rejecting unversioned dev builds, mutable branch names, and unsupported version inputs.
 
 Evidence: [internal/scaffold/scaffold_test.go](../../../internal/scaffold/scaffold_test.go).
 
@@ -18,6 +18,16 @@ Evidence: [internal/scaffold/scaffold_test.go](../../../internal/scaffold/scaffo
 
 - **WHEN** a development initializer lacks explicit candidate metadata
 - **THEN** init refuses to create an unpublished dependency pin
+
+#### Scenario: Main bootstrap
+
+- **WHEN** Go resolves an initializer invoked with `@main` to a canonical v0 pseudo-version
+- **THEN** consumer initialization succeeds with that exact pseudo-version in its dependency and matching generated version metadata
+
+#### Scenario: Release bootstrap
+
+- **WHEN** the initializer is invoked at an exact supported release tag
+- **THEN** the consumer dependency and generated metadata retain that exact release version
 
 ### Requirement: Safe project publication
 
