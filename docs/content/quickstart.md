@@ -106,3 +106,18 @@ The second apply reports `no-op`.
 
 To reopen the CLI terminal later, run `devcontainer exec --workspace-folder . bash`
 from the host project directory. In VS Code, use Reopen in Container again.
+
+### 8. Keep the agent running
+
+From the same project directory and environment:
+
+```sh
+# Reconcile immediately, then wait 30 seconds between successful runs.
+./agent run --interval 30s
+# Press Ctrl+C when finished.
+```
+
+The agent stays in the foreground. Edit `config.yaml` in another terminal to
+change the file contents; the next reconciliation updates `sandbox/hello.txt`.
+A reconciliation failure exits the process. See [deployment](../deployment/) for
+running under a supervisor.

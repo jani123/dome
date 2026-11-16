@@ -139,10 +139,15 @@ func TestSavedOptionsAndOverrides(t *testing.T) {
 			p := workspace.Profile{SchemaVersion: 1, Source: "git", State: "state.db", GitURL: "ssh://git@example.com/x", GitRef: "main", GitPath: "values.yaml", SSHKey: "key", KnownHosts: "hosts", Secrets: "secrets.yaml"}
 			s := &memoryWorkspace{found: true, profile: p}
 			b := &capturingBackend{}
-			cmd := NewWithOptions(b, WithWorkspaceStore(s))
+			cmd := newWithClock(b, &cancelPollingClock{}, WithWorkspaceStore(s))
 			cmd.SetOut(io.Discard)
 			cmd.SetArgs(append([]string{"--workspace", "/workspace"}, tt.args...))
-			require.NoError(t, cmd.Execute())
+			err := cmd.Execute()
+			if tt.args[0] == "run" {
+				require.ErrorIs(t, err, context.Canceled)
+			} else {
+				require.NoError(t, err)
+			}
 			require.Len(t, b.options, 1)
 			require.Equal(t, "/workspace/state.db", b.options[0].StatePath)
 			if tt.check != nil {

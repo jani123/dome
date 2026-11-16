@@ -40,7 +40,7 @@ func TestCommands(t *testing.T) {
 	for _, c := range []struct {
 		args []string
 		want string
-	}{{[]string{"plan", "--json"}, "abc"}, {[]string{"apply", "--json"}, "abc"}, {[]string{"run", "--json"}, "abc"}, {[]string{"status"}, "revision"}, {[]string{"modules"}, "file"}, {[]string{"playbook", "list"}, "demo"}, {[]string{"playbook", "run", "demo"}, "execution"}, {[]string{"operations", "list"}, "operation"}, {[]string{"operations", "inspect", "operation"}, "succeeded"}, {[]string{"version"}, "test-version"}, {[]string{"--help"}, "Reconcile"}} {
+	}{{[]string{"plan", "--json"}, "abc"}, {[]string{"apply", "--json"}, "abc"}, {[]string{"status"}, "revision"}, {[]string{"modules"}, "file"}, {[]string{"playbook", "list"}, "demo"}, {[]string{"playbook", "run", "demo"}, "execution"}, {[]string{"operations", "list"}, "operation"}, {[]string{"operations", "inspect", "operation"}, "succeeded"}, {[]string{"version"}, "test-version"}, {[]string{"--help"}, "Reconcile"}} {
 		t.Run(c.args[0]+c.want, func(t *testing.T) {
 			root := cli.NewWithOptions(backend{}, cli.WithWorkspaceStore(absentWorkspace{}))
 			var out bytes.Buffer

@@ -94,6 +94,29 @@ var (
 			Expect(code).To(Equal(2), out)
 			Expect(read(ctx, "/data/managed.txt")).To(Equal("initialized"))
 		})
+		It("continuously reconciles in the foreground by default", func(ctx SpecContext) {
+			put(ctx, "content: first\n")
+			code, out, err := testutil.Exec(ctx, c.Container, "sh", "-c", "(agent --state /data/state.db run --config /data/config.yaml & pid=$!; echo $pid >/data/run.pid; wait $pid; echo $? >/data/run.exit) >/data/run.log 2>&1 </dev/null &")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(0), out)
+			content := func() string {
+				_, body, err := testutil.Exec(ctx, c.Container, "cat", "/data/managed.txt")
+				if err != nil {
+					return ""
+				}
+				return body
+			}
+			Eventually(content, 10*time.Second, 100*time.Millisecond).Should(Equal("first"))
+			put(ctx, "content: second\n")
+			Eventually(content, 45*time.Second, 200*time.Millisecond).Should(Equal("second"))
+			code, out, err = testutil.Exec(ctx, c.Container, "sh", "-c", "test ! -e /data/run.exit && kill -TERM $(cat /data/run.pid)")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(0), out)
+			Eventually(func() int {
+				code, _, _ := testutil.Exec(ctx, c.Container, "test", "-e", "/data/run.exit")
+				return code
+			}, 10*time.Second, 100*time.Millisecond).Should(Equal(0))
+		})
 		It("creates, updates, detects no-op, prunes, and preserves unrelated files", func(ctx SpecContext) {
 			Expect(c.CopyToContainer(ctx, []byte("keep"), "/data/unrelated", 0o600)).To(Succeed())
 			put(ctx, "content: first\n")

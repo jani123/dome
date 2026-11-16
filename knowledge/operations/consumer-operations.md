@@ -24,7 +24,7 @@ sources:
 
 # Consumer CLI
 
-The compiled CLI can observe plans, reconcile, inspect durable execution history, and run or resume workflows without an AI runtime. A JSON plan reflects a fresh observation; persisted status is historical evidence, not a host probe. Polling exits on reconciliation failure so a supervisor can report and restart it. Error boundaries preserve specific causes/categories without adding secrets.
+The compiled CLI can observe plans, reconcile, inspect durable execution history, and run or resume workflows without an AI runtime. A JSON plan reflects a fresh observation; persisted status is historical evidence, not a host probe. The run command owns continuous foreground operation with a default 30-second wait after each successful reconciliation; positive interval overrides are supported. Apply owns one-shot execution, including migration from former one-shot run or zero-interval invocations. Polling exits on reconciliation failure so a supervisor can report and restart it. Error boundaries preserve specific causes/categories without adding secrets.
 
 Compiled-agent init creates a host runtime profile, distinct from developer
 source-repository generation. It saves source/state settings and credential-file

@@ -413,7 +413,9 @@ SOPS_AGE_KEY_FILE=/etc/dome/age.key .build/agent apply
 
 With `--git-url`, `--secrets secrets.enc.yaml` is a path inside the selected commit. Retrieval, decryption, and validation failures abort before reconciliation or pruning. Reconciliation failures retain the last successfully applied overall revision.
 
-`agent run` reconciles once by default. `agent run --interval 30s` polls and reconciles repeatedly; a failure exits so a supervisor can report and restart it. This is polling rather than a webhook service.
+`agent run` reconciles immediately and continues in the foreground, waiting 30 seconds after each successful reconciliation. Override the wait with a positive `--interval`, for example `agent run --interval 1m`. A failure exits so a supervisor can report and restart it; Ctrl+C stops the process. This is polling rather than a webhook service.
+
+For one-shot execution, use `agent apply`. When updating an existing agent, replace one-shot `run` or `run --interval 0` invocations with `apply`; zero and negative intervals are rejected.
 
 ## CLI
 

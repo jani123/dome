@@ -31,7 +31,12 @@ Git-backed resource configuration stays in its existing repository. Select the
 existing SQLite path when adopting this workflow on an already managed host.
 Initialization never resets or migrates execution history.
 
-Supervise `agent --workspace /path/to/workspace run --interval 30s` with systemd or another host supervisor.
+Supervise `agent --workspace /path/to/workspace run` with systemd or another host supervisor.
+The process stays in the foreground, reconciles immediately, and waits 30 seconds
+after each successful reconciliation. Use a positive `--interval 1m` to override
+the wait. Stop it with Ctrl+C or the supervisor’s termination signal. For one-shot
+execution, use `apply`; migrate old one-shot `run` and `run --interval 0`
+invocations to `apply`. Zero and negative intervals are rejected.
 A reconciliation failure exits; configure restart/reporting behavior deliberately.
 There is no embedded webhook service or automatic host rollback. Never let two
 state databases manage the same host resources. Preserve SQLite across restarts.

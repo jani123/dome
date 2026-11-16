@@ -96,9 +96,9 @@ func newWithClock(b Backend, clock clock, options ...CommandOption) *cobra.Comma
 		return showPlan(cmd, p)
 	}})
 	var interval time.Duration
-	run := &cobra.Command{Use: "run", Short: "Reconcile once, or poll configuration at an interval", Args: checkedArgs(cobra.NoArgs), RunE: func(cmd *cobra.Command, args []string) error {
-		if interval < 0 {
-			return fault.New(fault.Validation, "interval cannot be negative")
+	run := &cobra.Command{Use: "run", Short: "Continuously reconcile in the foreground", Args: checkedArgs(cobra.NoArgs), RunE: func(cmd *cobra.Command, args []string) error {
+		if interval <= 0 {
+			return fault.New(fault.Validation, "interval must be positive")
 		}
 		for {
 			p, err := b.Apply(cmd.Context(), o)
@@ -108,15 +108,12 @@ func newWithClock(b Backend, clock clock, options ...CommandOption) *cobra.Comma
 			if err = showPlan(cmd, p); err != nil {
 				return err
 			}
-			if interval == 0 {
-				return nil
-			}
 			if err = clock.Sleep(cmd.Context(), interval); err != nil {
 				return err
 			}
 		}
 	}}
-	run.Flags().DurationVar(&interval, "interval", 0, "Poll interval; zero reconciles once")
+	run.Flags().DurationVar(&interval, "interval", 30*time.Second, "Wait between reconciliations (must be positive)")
 	root.AddCommand(run)
 	root.AddCommand(&cobra.Command{Use: "status", Short: "Show managed resources, observations, and applied revision", Args: checkedArgs(cobra.NoArgs), RunE: func(cmd *cobra.Command, args []string) error {
 		v, err := b.Status(cmd.Context(), o)
