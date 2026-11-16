@@ -29,7 +29,7 @@ function fixture() {
     assert.equal(tabs.length, 2);
     groups.push({ tabs, panels: tabs.map(tab => elements.get(tab.getAttribute('aria-controls'))), querySelectorAll: () => tabs });
   }
-  assert.equal(groups.length, 2);
+  assert.equal(groups.length, 4);
   document.querySelectorAll = () => groups;
   runInNewContext(script, { document });
   return { document, groups };
@@ -65,14 +65,23 @@ test('keyboard navigation switches panels and focus without header controls', ()
   }
 });
 
-test('bootstrap and workspace-opening tabs have independent selection', () => {
+test('all quickstart tab groups have independent selection', () => {
   const { groups } = fixture();
   assert.equal(groups[0].tabs[0].getAttribute('id'), 'bootstrap-go-tab');
   assert.equal(groups[1].tabs[0].getAttribute('id'), 'workspace-cli-tab');
+  assert.equal(groups[2].tabs[0].getAttribute('id'), 'contents-shell-tab');
+  assert.equal(groups[3].tabs[0].getAttribute('id'), 'define-shell-tab');
   groups[0].tabs[1].dispatchEvent(new Event('click'));
   assert.deepEqual(groups[0].panels.map(panel => panel.hidden), [true, false]);
   assert.deepEqual(groups[1].panels.map(panel => panel.hidden), [false, true]);
   groups[1].tabs[1].dispatchEvent(new Event('click'));
   assert.deepEqual(groups[0].panels.map(panel => panel.hidden), [true, false]);
+  assert.deepEqual(groups[1].panels.map(panel => panel.hidden), [true, false]);
+  assert.deepEqual(groups[2].panels.map(panel => panel.hidden), [false, true]);
+  groups[2].tabs[1].dispatchEvent(new Event('click'));
+  assert.deepEqual(groups[2].panels.map(panel => panel.hidden), [true, false]);
+  assert.deepEqual(groups[3].panels.map(panel => panel.hidden), [false, true]);
+  groups[3].tabs[1].dispatchEvent(new Event('click'));
+  assert.deepEqual(groups[3].panels.map(panel => panel.hidden), [true, false]);
   assert.deepEqual(groups[1].panels.map(panel => panel.hidden), [true, false]);
 });

@@ -2,11 +2,11 @@
 
 Generated with Dome {{.Version}} for project module `{{.Module}}`.
 This names your project; it does not need to be hosted online.
-Requires Linux with Docker and either Dev Container CLI or VS Code with the
-Dev Containers extension. Go 1.26.11 is supplied by `.devcontainer/`; host Go is
-optional. Codex is optional for conversational authoring.
+Requires Linux with Go 1.26.11 or newer, locally or in Docker. The optional
+`.devcontainer/` supplies pinned Go; use Dev Container CLI or VS Code with the
+Dev Containers extension to open it. Codex is optional for conversational authoring.
 
-From the host project directory, start the generated workspace:
+Optionally, from the host project directory, start the generated workspace:
 
 ```sh
 devcontainer up --workspace-folder .
@@ -14,8 +14,8 @@ devcontainer exec --workspace-folder . bash
 ```
 
 Alternatively, open this folder in VS Code and run **Dev Containers: Reopen in
-Container**, then open its terminal. Run the remaining commands inside the
-container at `/workspace`. `sandbox/` must remain present.
+Container**, then open its terminal. Run the remaining commands from the project directory
+with local Go, or at `/workspace` inside the container. `sandbox/` must remain present.
 
 ```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent

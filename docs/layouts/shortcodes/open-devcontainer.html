@@ -4,15 +4,32 @@
     <button type="button" id="workspace-vscode-tab" role="tab" aria-selected="false" aria-controls="workspace-vscode-panel" tabindex="-1">VS Code</button>
   </div>
   <section id="workspace-cli-panel" role="tabpanel" aria-labelledby="workspace-cli-tab" tabindex="0">
-    {{ highlight "devcontainer up --workspace-folder .\ndevcontainer exec --workspace-folder . bash" "sh" "" }}
+    {{ highlight `# Start the container from the host project directory.
+devcontainer up --workspace-folder .
+
+# Open a shell in the container.
+devcontainer exec --workspace-folder . bash
+
+# When finished, leave the container shell.
+exit
+
+# On the host, stop the container.
+# Use the containerId printed by devcontainer up.
+docker stop <container-id>` "sh" "" }}
   </section>
   <section id="workspace-vscode-panel" role="tabpanel" aria-labelledby="workspace-vscode-tab" tabindex="0" hidden>
-    {{ highlight "code ." "sh" "" }}
-    <ol>
-      <li>Install the <strong>Dev Containers</strong> extension in VS Code.</li>
-      <li>Run <strong>Dev Containers: Reopen in Container</strong> from the command palette.</li>
-      <li>Open a terminal in the container.</li>
-    </ol>
+    {{ highlight `# Install the Dev Containers extension in VS Code.
+
+# Open the project from the host.
+code .
+
+# In the command palette, run:
+# Dev Containers: Reopen in Container
+
+# Open a terminal in the container for the remaining steps.
+
+# When finished, run from the command palette:
+# Dev Containers: Reopen Folder Locally` "sh" "" }}
   </section>
 </div>
 <noscript><p>CLI: run <code>devcontainer up --workspace-folder .</code>, then <code>devcontainer exec --workspace-folder . bash</code>. VS Code: open the project and run <strong>Dev Containers: Reopen in Container</strong>.</p></noscript>

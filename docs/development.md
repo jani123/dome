@@ -21,6 +21,9 @@ instructions and repository rules remain authoritative. If code, specs, and docs
 disagree, inspect the evidence and record the discrepancy instead of certifying a
 guess. Preserve secrets outside tracked artifacts.
 
+For guide structure, command formatting, tabbed alternatives, and rendered-page
+verification, follow [Documentation authoring rules](AGENTS.md).
+
 ## Tooling and commands
 
 ```sh

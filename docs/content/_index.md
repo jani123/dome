@@ -9,3 +9,6 @@ A coding agent can help author the project; the compiled agent runs without AI.
 Use the guides and API matching your project's pinned Dome version. The `next`
 guides can describe unreleased behavior. Start with the quickstart, then read
 resource authoring and recovery before adding privileged host operations.
+
+Customers should receive source, configuration, and build material with their
+agent. Paid implementation and support are welcome.

@@ -39,16 +39,15 @@ docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env CGO_ENABLED=0 \
 node - "$repo_root" "$project" "${proxy_hosts[@]}" <<'JS'
 const fs = require('node:fs');
 const [root, project, ...hosts] = process.argv.slice(2);
-const guide = fs.readFileSync(`${root}/docs/content/quickstart.md`, 'utf8');
-const fences = [...guide.matchAll(/^```(yaml|go)\n([\s\S]*?)^```/gm)];
-fs.writeFileSync(`${project}/config.yaml`, fences.find(fence => fence[1] === 'yaml')[2]);
-const example = fences.find(fence => fence[1] === 'go')[2];
-const path = `${project}/cmd/agent/main.go`;
-const source = fs.readFileSync(path, 'utf8');
-const start = source.indexOf('func desired(');
-const end = source.indexOf('\nfunc main(', start);
-if (start < 0 || end < 0) throw new Error('Generated desired-state function not found');
-fs.writeFileSync(path, source.slice(0, start) + example.trimEnd() + '\n' + source.slice(end));
+const contents = fs.readFileSync(`${root}/docs/layouts/shortcodes/file-contents.html`, 'utf8');
+const command = contents.match(/\$writeConfig := `([\s\S]*?)`/);
+if (!command) throw new Error('File-content shell example not found');
+fs.writeFileSync(`${project}/.quickstart-config.sh`, command[1]);
+const definition = fs.readFileSync(`${root}/docs/layouts/shortcodes/define-file.html`, 'utf8');
+const desired = definition.match(/\$desired := `([\s\S]*?)`/);
+const define = definition.match(/\$defineFile := printf `([\s\S]*?)`/);
+if (!desired || !define) throw new Error('File-definition shell example not found');
+fs.writeFileSync(`${project}/.quickstart-define.sh`, define[1].replace('%s', desired[1]));
 if (hosts.length) {
   const config = JSON.parse(fs.readFileSync(`${project}/.devcontainer/devcontainer.json`, 'utf8'));
   config.runArgs = [...new Set(hosts)];
@@ -70,7 +69,7 @@ cleanup() {
 env -u LD_LIBRARY_PATH "$cli" up "${args[@]}" > "$fixture/up.json" 2> "$fixture/up.log"
 container_id=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).containerId)' "$fixture/up.json")
 execute() { env -u LD_LIBRARY_PATH "$cli" exec "${args[@]}" "$@"; }
-execute bash -euc 'test "$(id -un)" = dev; test "$(pwd)" = /workspace; go version; CGO_ENABLED=0 go build -o agent ./cmd/agent; go test ./...; ./agent init --config config.yaml --non-interactive; test ! -e sandbox/hello.txt; ./agent plan --json; test ! -e sandbox/hello.txt; ./agent apply --json; cat sandbox/hello.txt; ./agent apply --json' > "$fixture/walkthrough.log" 2>&1
+execute bash -euc 'bash .quickstart-config.sh; bash .quickstart-define.sh; test "$(id -un)" = dev; test "$(pwd)" = /workspace; go version; CGO_ENABLED=0 go build -o agent ./cmd/agent; go test ./...; ./agent init --config config.yaml --non-interactive; test ! -e sandbox/hello.txt; ./agent plan --json; test ! -e sandbox/hello.txt; ./agent apply --json; cat sandbox/hello.txt; ./agent apply --json' > "$fixture/walkthrough.log" 2>&1
 # Stop/start the generated workspace and verify stable resource and state paths.
 docker stop "$container_id" > /dev/null
 env -u LD_LIBRARY_PATH "$cli" up "${args[@]}" > "$fixture/reopen.json" 2> "$fixture/reopen.log"

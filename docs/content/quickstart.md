@@ -5,9 +5,8 @@ weight: 10
 
 ## Prerequisites
 
-- Linux with Docker.
-- Dev Container CLI, or VS Code with the Dev Containers extension.
-- Optional: Go 1.26.11 or newer for direct project creation.
+- Linux with Go 1.26.11 or newer, or Docker.
+- Optional: Dev Container CLI, or VS Code with the Dev Containers extension.
 - Module-download access.
 - Permission to access the target machine.
 - Optional: Codex, the initially supported coding agent.
@@ -21,60 +20,26 @@ weight: 10
 `example.com/my-machine` names your new Go project; it does not need to exist
 online.
 
-### 2. Open the development container
+### 2. Open the development container (optional)
 
-From the host, in `my-machine`:
+If you want to develop in a container, run from the host in `my-machine`:
 
 {{< open-devcontainer >}}
 
-Run all remaining commands in the container terminal at `/workspace`.
+Otherwise, continue with local Go in `my-machine`. Run the remaining commands
+from that directory, or from `/workspace` in the devcontainer terminal.
 
 ### 3. Set the file contents
 
-In `config.yaml`:
-
-```yaml
-content: "Hello from Dome\n"
-managed: true
-```
+{{< file-contents >}}
 
 ### 4. Define the file
 
-In `cmd/agent/main.go`, use this `desired` function with the generated imports
-and `Settings` and `Secrets` types:
-
-```go
-func desired(ctx context.Context, doc config.Document) ([]resource.Resource, error) {
-    settings, _, err := config.Parse[Settings, Secrets](ctx, doc, nil)
-    if err != nil {
-        return nil, err
-    }
-    if !settings.Managed {
-        return nil, nil
-    }
-    root, err := filepath.Abs("sandbox")
-    if err != nil {
-        return nil, fault.Wrap(fault.Validation, err)
-    }
-    return []resource.Resource{
-        &file.File{
-            Path:    filepath.Join(root, "hello.txt"),
-            Content: []byte(settings.Content),
-            Mode:    0o640,
-        },
-    }, nil
-}
-```
-
-The generated `main` registers the file module:
-
-```go
-agent.WithModules(file.Module{}),
-```
+{{< define-file >}}
 
 ### 5. Build and plan
 
-Run inside the devcontainer:
+Run from the project directory, locally or inside the devcontainer:
 
 ```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
@@ -103,9 +68,6 @@ Hello from Dome
 ```
 
 The second apply reports `no-op`.
-
-To reopen the CLI terminal later, run `devcontainer exec --workspace-folder . bash`
-from the host project directory. In VS Code, use Reopen in Container again.
 
 ### 8. Keep the agent running
 

@@ -1,0 +1,16 @@
+{{- $writeConfig := `printf '%s\n' 'content: "Hello from Dome\n"' 'managed: true' > config.yaml` -}}
+<div class="command-tabs" data-tabs>
+  <div class="command-tab-list" role="tablist" aria-label="Set the file contents">
+    <button type="button" id="contents-shell-tab" role="tab" aria-selected="true" aria-controls="contents-shell-panel" tabindex="0">Shell</button>
+    <button type="button" id="contents-vscode-tab" role="tab" aria-selected="false" aria-controls="contents-vscode-panel" tabindex="-1">VS Code</button>
+  </div>
+  <section id="contents-shell-panel" role="tabpanel" aria-labelledby="contents-shell-tab" tabindex="0">
+    {{ highlight $writeConfig "sh" "" }}
+  </section>
+  <section id="contents-vscode-panel" role="tabpanel" aria-labelledby="contents-vscode-tab" tabindex="0" hidden>
+    {{ highlight `# Open config.yaml and replace its contents with:
+content: "Hello from Dome\n"
+managed: true` "yaml" "" }}
+  </section>
+</div>
+<noscript><pre>printf '%s\n' 'content: "Hello from Dome\n"' 'managed: true' &gt; config.yaml</pre></noscript>

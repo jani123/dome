@@ -1,0 +1,44 @@
+{{- $desired := `func desired(ctx context.Context, doc config.Document) ([]resource.Resource, error) {
+    settings, _, err := config.Parse[Settings, Secrets](ctx, doc, nil)
+    if err != nil {
+        return nil, err
+    }
+    if !settings.Managed {
+        return nil, nil
+    }
+    root, err := filepath.Abs("sandbox")
+    if err != nil {
+        return nil, fault.Wrap(fault.Validation, err)
+    }
+    return []resource.Resource{
+        &file.File{
+            Path:    filepath.Join(root, "hello.txt"),
+            Content: []byte(settings.Content),
+            Mode:    0o640,
+        },
+    }, nil
+}` -}}
+{{- $defineFile := printf `# Keep the generated imports and main; replace only desired.
+sed '/^func desired(/,/^}/d' cmd/agent/main.go > cmd/agent/main.go.tmp
+
+# Define the file resource.
+cat >> cmd/agent/main.go.tmp <<'GO'
+%s
+GO
+
+# Save and format the updated Go file.
+mv cmd/agent/main.go.tmp cmd/agent/main.go
+gofmt -w cmd/agent/main.go` $desired -}}
+<div class="command-tabs" data-tabs>
+  <div class="command-tab-list" role="tablist" aria-label="Define the file resource">
+    <button type="button" id="define-shell-tab" role="tab" aria-selected="true" aria-controls="define-shell-panel" tabindex="0">Shell</button>
+    <button type="button" id="define-vscode-tab" role="tab" aria-selected="false" aria-controls="define-vscode-panel" tabindex="-1">VS Code</button>
+  </div>
+  <section id="define-shell-panel" role="tabpanel" aria-labelledby="define-shell-tab" tabindex="0">
+    {{ highlight $defineFile "sh" "" }}
+  </section>
+  <section id="define-vscode-panel" role="tabpanel" aria-labelledby="define-vscode-tab" tabindex="0" hidden>
+    {{ highlight (printf "// In cmd/agent/main.go, replace the desired function with:\n%s" $desired) "go" "" }}
+  </section>
+</div>
+<noscript><p>Replace the generated <code>desired</code> function in <code>cmd/agent/main.go</code> with the file-resource example shown in the Shell panel. Keep the generated imports and module registrations.</p></noscript>

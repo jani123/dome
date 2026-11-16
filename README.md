@@ -16,7 +16,7 @@ go run github.com/jani123/dome/cmd/dome@main init my-machine --project-module ex
 cd my-machine
 ```
 
-Then open the generated workspace from the host:
+Optionally open the generated workspace from the host:
 
 ```sh
 devcontainer up --workspace-folder .
@@ -24,8 +24,8 @@ devcontainer exec --workspace-folder . bash
 ```
 
 Alternatively, open `my-machine` in VS Code with the Dev Containers extension and
-run **Dev Containers: Reopen in Container**. Run the following inside that
-container at `/workspace`:
+run **Dev Containers: Reopen in Container**. Run the following from the project
+directory with local Go, or inside that container at `/workspace`:
 
 ```sh
 CGO_ENABLED=0 go build -o agent ./cmd/agent
@@ -51,7 +51,7 @@ Its immutable initializer uses `--module` for project identity and does not
 include the new consumer devcontainer. Use its matching versioned instructions.
 Stable `v0.1.0` follows the remaining acceptance checks.
 
-Use Linux amd64/arm64 with Docker and Dev Container CLI or VS Code. Native release
+Use Linux amd64/arm64 with local Go, or Docker and Dev Container CLI or VS Code. Native release
 smokes gate platform claims. Go on the host is optional; see Docker bootstrap
 below. Open Codex in the project and ask it to use the `dome` skill. Adding a Go
 dependency alone does not install skills. The compiled consumer runs without AI.
@@ -237,6 +237,10 @@ These commands require a real tag and are not substitutes for native CI.
 See [compatibility/support policy](docs/content/releases.md),
 [customer licensing](docs/content/licensing.md), and
 [dependency review](docs/DEPENDENCY_REVIEW.md).
+
+Run `node --test scripts/test-docs-preview.mjs` for a real Hugo preview check
+that edits guide text and verifies shortcode panels remain rendered correctly.
+Preview uses full page rendering rather than Hugo fast render.
 
 Local preview: Hugo starts automatically with the devcontainer; run
 `task devcontainer:urls` on the host to find its randomly assigned localhost URL.

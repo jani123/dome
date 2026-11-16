@@ -5,6 +5,8 @@ public API examples, supported behavior, and development commands.
 
 ## Documentation and working notes
 
+- For user-facing guides and generated project documentation, follow the
+  presentation and verification conventions in [docs/AGENTS.md](docs/AGENTS.md).
 - Never commit ad hoc plans, handovers, task checklists, or agent progress/session
   notes, regardless of their filename or location. Keep temporary working
   documents in ignored local storage such as `.build/notes/`.
